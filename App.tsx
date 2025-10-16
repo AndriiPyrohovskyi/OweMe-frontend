@@ -1,18 +1,16 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import React from 'react';
+import {
+  StatusBar,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from 'react-native';
 import {
   SafeAreaProvider,
-  useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 
-function App() {
+function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
@@ -23,13 +21,19 @@ function App() {
   );
 }
 
-function AppContent() {
+function AppContent(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
+  const backgroundColor = isDarkMode ? '#1a1a1a' : '#f5f5f5';
+  const textColor = isDarkMode ? '#fff' : '#000';
+
   return (
-    <View style={styles.container}>
-      <Text style={[styles.text, { color: isDarkMode ? '#fff' : '#000' }]}>
-        Hello World!
+    <View style={[styles.container, { backgroundColor }]}>
+      <Text style={[styles.text, { color: textColor }]}>
+        OweMe
+      </Text>
+      <Text style={[styles.subtitle, { color: textColor }]}>
+        Track debts with friends
       </Text>
     </View>
   );
@@ -42,7 +46,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontSize: 18,
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    opacity: 0.7,
   },
 });
 

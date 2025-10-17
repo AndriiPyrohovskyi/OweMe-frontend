@@ -9,8 +9,32 @@ import {
 import {
   SafeAreaProvider,
 } from 'react-native-safe-area-context';
+import { Button } from './src/components/Button';
+import colors from './src/theme/colors';
+import typography from './src/theme/typography';
 
-function App(): React.JSX.Element {
+function AppContent(): React.JSX.Element {
+  return (
+    <View style={[styles.container]}>
+      <Text style={[typography.h1, styles.text]}>
+        OweMe
+      </Text>
+      <Text style={[typography.secondary, styles.subtitle]}>
+        Track debts with friends
+      </Text>
+      <Button 
+        title="Click" 
+        onPress={() => {
+          console.log('Button pressed!');
+        }}
+        variant='green'
+        padding={8}
+      />
+    </View>
+  );
+}
+
+export default function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
@@ -21,39 +45,20 @@ function App(): React.JSX.Element {
   );
 }
 
-function AppContent(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundColor = isDarkMode ? '#1a1a1a' : '#f5f5f5';
-  const textColor = isDarkMode ? '#fff' : '#000';
-
-  return (
-    <View style={[styles.container, { backgroundColor }]}>
-      <Text style={[styles.text, { color: textColor }]}>
-        OweMe
-      </Text>
-      <Text style={[styles.subtitle, { color: textColor }]}>
-        Track debts with friends
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background
   },
   text: {
-    fontSize: 32,
-    fontWeight: 'bold',
     marginBottom: 10,
+    color: colors.text
   },
   subtitle: {
-    fontSize: 16,
     opacity: 0.7,
+    color: colors.text,
+    marginBottom: 20,
   },
 });
-
-export default App;

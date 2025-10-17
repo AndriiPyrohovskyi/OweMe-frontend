@@ -11,6 +11,13 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		EA24C7E1BC40472D921E7879 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 097554EAFF8048189E35A767 /* Inter-Regular.ttf */; };
+		819D701E19144DEA99585E2B /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F7E581A76AAB43B7ADAFB16A /* Inter-SemiBold.ttf */; };
+		43EA8DD5C9C448A3A563A393 /* Nunito-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 122F52FA6E1F49F488493F2F /* Nunito-Bold.ttf */; };
+		4FB4513F23414885A9BECD3D /* Nunito-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A6934DB2D5645379C86AE54 /* Nunito-SemiBold.ttf */; };
+		FA4FC5A38DF842B4AF6619D5 /* Poppins-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6D8658FE61B54EB581764849 /* Poppins-Bold.ttf */; };
+		9DDE82F0093A4454827D95BD /* Poppins-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 98BD2F09134C4E2CABEB01F5 /* Poppins-SemiBold.ttf */; };
+		9638CE4877864158A062B4B0 /* Roboto-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 01CECEDF85B243C5996108B7 /* Roboto-Bold.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +31,13 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = OweMe/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = OweMe/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		097554EAFF8048189E35A767 /* Inter-Regular.ttf */ = {isa = PBXFileReference; name = "Inter-Regular.ttf"; path = "../android/app/src/main/assets/fonts/Inter-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F7E581A76AAB43B7ADAFB16A /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; name = "Inter-SemiBold.ttf"; path = "../android/app/src/main/assets/fonts/Inter-SemiBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		122F52FA6E1F49F488493F2F /* Nunito-Bold.ttf */ = {isa = PBXFileReference; name = "Nunito-Bold.ttf"; path = "../android/app/src/main/assets/fonts/Nunito-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		9A6934DB2D5645379C86AE54 /* Nunito-SemiBold.ttf */ = {isa = PBXFileReference; name = "Nunito-SemiBold.ttf"; path = "../android/app/src/main/assets/fonts/Nunito-SemiBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		6D8658FE61B54EB581764849 /* Poppins-Bold.ttf */ = {isa = PBXFileReference; name = "Poppins-Bold.ttf"; path = "../android/app/src/main/assets/fonts/Poppins-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		98BD2F09134C4E2CABEB01F5 /* Poppins-SemiBold.ttf */ = {isa = PBXFileReference; name = "Poppins-SemiBold.ttf"; path = "../android/app/src/main/assets/fonts/Poppins-SemiBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		01CECEDF85B243C5996108B7 /* Roboto-Bold.ttf */ = {isa = PBXFileReference; name = "Roboto-Bold.ttf"; path = "../android/app/src/main/assets/fonts/Roboto-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +88,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				F7E8613E7B3E4FF7AFD66BFE /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -96,6 +111,21 @@
 			);
 			path = Pods;
 			sourceTree = "<group>";
+		};
+		F7E8613E7B3E4FF7AFD66BFE /* Resources */ = {
+			isa = "PBXGroup";
+			children = (
+				097554EAFF8048189E35A767 /* Inter-Regular.ttf */,
+				F7E581A76AAB43B7ADAFB16A /* Inter-SemiBold.ttf */,
+				122F52FA6E1F49F488493F2F /* Nunito-Bold.ttf */,
+				9A6934DB2D5645379C86AE54 /* Nunito-SemiBold.ttf */,
+				6D8658FE61B54EB581764849 /* Poppins-Bold.ttf */,
+				98BD2F09134C4E2CABEB01F5 /* Poppins-SemiBold.ttf */,
+				01CECEDF85B243C5996108B7 /* Roboto-Bold.ttf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -159,6 +189,13 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				EA24C7E1BC40472D921E7879 /* Inter-Regular.ttf in Resources */,
+				819D701E19144DEA99585E2B /* Inter-SemiBold.ttf in Resources */,
+				43EA8DD5C9C448A3A563A393 /* Nunito-Bold.ttf in Resources */,
+				4FB4513F23414885A9BECD3D /* Nunito-SemiBold.ttf in Resources */,
+				FA4FC5A38DF842B4AF6619D5 /* Poppins-Bold.ttf in Resources */,
+				9DDE82F0093A4454827D95BD /* Poppins-SemiBold.ttf in Resources */,
+				9638CE4877864158A062B4B0 /* Roboto-Bold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

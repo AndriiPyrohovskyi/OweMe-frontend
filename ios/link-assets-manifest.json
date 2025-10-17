@@ -1,0 +1,33 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "android/app/src/main/assets/fonts/Inter-Regular.ttf",
+      "sha1": "bd1976c1f019853ab6143ef1246e25aa66fd990e"
+    },
+    {
+      "path": "android/app/src/main/assets/fonts/Inter-SemiBold.ttf",
+      "sha1": "f3e44abd6661d5b861e66db22f4f79a6c466cd00"
+    },
+    {
+      "path": "android/app/src/main/assets/fonts/Nunito-Bold.ttf",
+      "sha1": "e50cf9134308e37008cbd39da1dc637aef022641"
+    },
+    {
+      "path": "android/app/src/main/assets/fonts/Nunito-SemiBold.ttf",
+      "sha1": "c4a5281a3e088e1d2604635d4d09a1583d036db6"
+    },
+    {
+      "path": "android/app/src/main/assets/fonts/Poppins-Bold.ttf",
+      "sha1": "875cf0cecd647bcf22e79d633d868c1b1ec98dfa"
+    },
+    {
+      "path": "android/app/src/main/assets/fonts/Poppins-SemiBold.ttf",
+      "sha1": "8a4ace9392d06bcb7f8ea2f5169b07e4c383a90d"
+    },
+    {
+      "path": "android/app/src/main/assets/fonts/Roboto-Bold.ttf",
+      "sha1": "783de2321d7e6d21f880a10437a9f2c7b45ed198"
+    }
+  ]
+}

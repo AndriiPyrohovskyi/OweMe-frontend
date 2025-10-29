@@ -7,7 +7,7 @@ import { Button } from "../components/Button";
 
 type HomeScreenProps = {
     navigation: NavigationProp<any>;
-};
+}
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return (

@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import colors from './src/theme/colors';
+import { LoginScreen } from './src/screens/LoginScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -37,6 +38,11 @@ export default function App(): React.JSX.Element {
             name="Dashboard" 
             component={DashboardScreen} 
             options={{ title: 'Dashboard' }}
+          />
+          <Stack.Screen 
+            name="Login" 
+            component={LoginScreen} 
+            options={{ title: 'Login' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

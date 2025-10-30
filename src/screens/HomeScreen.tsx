@@ -22,6 +22,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 variant='green'
                 padding={8}
             />
+            <Button 
+                title="Go to Dashboard" 
+                onPress={() => navigation.navigate('Login')}
+                variant='green'
+                padding={8}
+            />
         </View>
     );
 };

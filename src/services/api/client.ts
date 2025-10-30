@@ -67,7 +67,8 @@ apiClient.interceptors.response.use(
             console.log('Error', {
                 status: error.response?.status,
                 url: error.config?.url,
-                message: error.message
+                message: error.message,
+                data: error.response?.data
             });
         }
         if (error.response) {
@@ -132,7 +133,7 @@ export const api = {
     get: <T = any>(url: string, config?: any) => 
         apiClient.get<T>(url, config).then(res => res.data),
     post: <T = any>(url: string, data?: any, config?: any) => 
-        apiClient.post<T>(url, config).then(res => res.data),
+        apiClient.post<T>(url, data, config).then(res => res.data),
     put: <T = any>(url: string, data?: any, config?: any) => 
         apiClient.put<T>(url, data, config).then(res => res.data),
     patch: <T = any>(url: string, data?: any, config?: any) => 

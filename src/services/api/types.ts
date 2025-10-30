@@ -67,6 +67,16 @@ export interface UpdateOweParticipantDto {
   sum?: number;
 }
 
+export interface UpdateUserDto {
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  passwordHash?: string;
+  email?: string;
+  avatarUrl?: string;
+  description?: string;
+}
+
 export enum UserRole {
     User = "User",
     Premium = "Premium",

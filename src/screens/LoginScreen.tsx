@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Alert } from 'react-native';
-import { authApi } from '../services/api/endpoints/auth';
-import { authStorage } from '../services/storage/authStorage';
+import { View, TextInput, Button, Alert, ActivityIndicator } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../services/api/client';
 import { NavigationProp } from '@react-navigation/native';
 
@@ -13,20 +12,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     try {
       setLoading(true);
-      
-      const response = await authApi.login({ username, password });
-
-      await authStorage.setToken(response.accessToken);
-
-      const user = await authApi.getProfile();
-      await authStorage.setUser(user);
-
-      navigation.navigate('Dashboard');
-
+      await login(username, password);
     } catch (error) {
       if (error instanceof ApiError) {
         Alert.alert('Помилка', error.message);
@@ -39,11 +31,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <View>
+    <View style={{ flex: 1, justifyContent: 'center', padding: 20 }}>
       <TextInput
         placeholder="Username"
         value={username}
         onChangeText={setUsername}
+        autoCapitalize="none"
       />
       <TextInput
         placeholder="Password"
@@ -59,3 +52,5 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     </View>
   );
 };
+
+export default LoginScreen;

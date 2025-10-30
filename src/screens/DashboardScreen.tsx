@@ -4,26 +4,25 @@ import { Button } from '../components/Button';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { NavigationProp } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
 
 type DashboardScreenProps = {
   navigation: NavigationProp<any>;
 };
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    // Автоматично перекине на Login
+  };
   return (
     <View style={styles.container}>
       <Text style={[typography.h1, styles.text]}>
-        Dashboard
+        Вітаємо, {user?.username}!
       </Text>
-      <Text style={[typography.secondary, styles.subtitle]}>
-        Your debts and credits
-      </Text>
-      <Button 
-        title="Go Back" 
-        onPress={() => navigation.goBack()}
-        variant='purple'
-        padding={8}
-      />
+      <Button title="Вийти" onPress={handleLogout} />
     </View>
   );
 };

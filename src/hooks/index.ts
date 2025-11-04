@@ -1,0 +1,1 @@
+export { useSafeArea } from './useSafeArea';

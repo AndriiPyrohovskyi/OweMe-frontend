@@ -5,24 +5,31 @@ import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { NavigationProp } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { Dropdown } from '../components/Dropdown';
 
-type DashboardScreenProps = {
+type MainScreenProps = {
   navigation: NavigationProp<any>;
 };
 
-export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
+export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
-    // Автоматично перекине на Login
   };
   return (
     <View style={styles.container}>
       <Text style={[typography.h1, styles.text]}>
         Вітаємо, {user?.username}!
       </Text>
-      <Button title="Вийти" onPress={handleLogout} />
+      <Dropdown
+        onPress={() => {}}
+        options={["1", "2", "3", "1", "2", "3", "1", "2", "3", "1", "2", "3", "1", "2", "3", "1", "2", "3", "1", "2", "3", "1", "2", "3"]}
+        title='123445'
+      >
+
+      </Dropdown>
+      <Button title="Кнопівка" onPress={() => {}} iconSize={12} icon='dropdownIcon' padding={8}/>
     </View>
   );
 };

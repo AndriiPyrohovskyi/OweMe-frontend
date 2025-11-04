@@ -2,11 +2,13 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import colors from "../theme/colors";
 import typography from "../theme/typography";
+import Icon from "./Icon";
 
 interface ButtonProps {
     onPress: () => void;
     title?: string;
-    icon?: any;
+    icon?: string;
+    iconSize?: number;
     variant?: 'purple' | 'green' | 'yellow' | "coral";
     padding?: number;
 }
@@ -16,6 +18,7 @@ export const Button: React.FC<ButtonProps> = ({
     onPress,
     variant = 'purple',
     icon = null,
+    iconSize = 12,
     padding = 4,
 }) => {
     const buttonStyle = [
@@ -34,7 +37,7 @@ export const Button: React.FC<ButtonProps> = ({
             activeOpacity={0.7}
         >
             <View style={styles.content}>
-                {icon && <View style={styles.iconContainer}>{icon}</View>}
+                {icon && <Icon name={icon} size={iconSize} />}
                 {title && (
                     <Text style={[typography.CTA, styles.text]}>
                         {title}
@@ -48,14 +51,15 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
     button: {
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         borderRadius: 16,
-        borderWidth: 2
+        borderWidth: 2,
+        width: '100%',
     },
     content: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
     },
     iconContainer: {
         marginRight: 8,

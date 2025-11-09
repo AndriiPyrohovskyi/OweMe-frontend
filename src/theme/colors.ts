@@ -20,4 +20,21 @@ const colors = {
     card_surface: '#FFFFFF',
     border_divider: '#DCE2EA',
 };
-export default colors;
+
+// Додаємо алі��си для зручності
+export default {
+    ...colors,
+    border: colors.border_divider,
+    text: {
+        primary: colors.text,
+        secondary: colors.text70,
+    },
+    background: {
+        primary: colors.background,
+        secondary: colors.card_surface,
+    },
+} as typeof colors & {
+    border: string;
+    text: { primary: string; secondary: string } & string;
+    background: { primary: string; secondary: string } & string;
+};

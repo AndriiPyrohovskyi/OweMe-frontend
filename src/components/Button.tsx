@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
 import colors from "../theme/colors";
 import typography from "../theme/typography";
 import Icon from "./Icon";
@@ -11,6 +11,7 @@ interface ButtonProps {
     iconSize?: number;
     variant?: 'purple' | 'green' | 'yellow' | "coral";
     padding?: number;
+    style?: ViewStyle;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -20,6 +21,7 @@ export const Button: React.FC<ButtonProps> = ({
     icon = null,
     iconSize = 12,
     padding = 4,
+    style,
 }) => {
     const buttonStyle = [
         { padding: padding },
@@ -28,6 +30,7 @@ export const Button: React.FC<ButtonProps> = ({
         variant === 'green' && styles.green,
         variant === 'yellow' && styles.yellow,
         variant === 'coral' && styles.coral,
+        style,
     ];
     
     return (

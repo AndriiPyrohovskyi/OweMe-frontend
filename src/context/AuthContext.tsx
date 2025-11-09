@@ -7,7 +7,12 @@ interface User {
   id: number;
   username: string;
   email: string;
-  // ...інші поля
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+  description?: string;
+  isBanned?: boolean;
+  createdAt?: string;
 }
 
 interface AuthContextType {

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import colors from "../theme/colors";
 import typography from "../theme/typography";
 import Icon from "./Icon";
@@ -18,10 +18,8 @@ interface TabBarProps {
 export const TabBar: React.FC<TabBarProps> = ({
     onTabChange,
     tabs,
-    activeTab: initialActiveTab = { name: "Home", icon: "dropdownIcon" }
+    activeTab = { name: "Home", icon: "homeIcon" }
 }) => {
-    const [activeTab, setActiveTab] = useState<TabAtributes>(initialActiveTab);
-
     return (
         <View style={styles.tabs}>
             {tabs.map((tab: TabAtributes, index) => {
@@ -31,7 +29,6 @@ export const TabBar: React.FC<TabBarProps> = ({
                         key={index}
                         style={styles.tab}
                         onPress={() => {
-                            setActiveTab(tab);
                             onTabChange(tab);
                         }}
                     >

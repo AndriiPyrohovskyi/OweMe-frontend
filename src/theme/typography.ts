@@ -83,4 +83,19 @@ const typography = {
     }
 };
 
-export default typography;
+// Додаємо алі��си для зручності
+export default {
+    ...typography,
+    body: typography.main,
+    bodyBold: {
+        ...typography.main,
+        fontFamily: Platform.select({
+            ios: 'Nunito-Bold',
+            android: 'Nunito-Bold',
+            default: 'System'
+        }),
+        fontWeight: '700' as const,
+    },
+    caption: typography.secondary,
+    button: typography.CTA,
+};

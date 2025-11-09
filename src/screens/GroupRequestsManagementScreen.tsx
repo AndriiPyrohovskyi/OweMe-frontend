@@ -8,7 +8,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import { groupsApi, RequestToGroup, RequestFromGroup } from '../services/api/endpoints/groups';
+import { groupsApi, RequestToGroup, RequestFromGroup, RequestStatus } from '../services/api/endpoints/groups';
 import { Icon } from '../components/Icon';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
@@ -38,10 +38,14 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
       setLoading(true);
       if (activeTab === 'received') {
         const data = await groupsApi.getRequestsToGroup(groupId);
-        setReceivedRequests(data);
+        // ФІКС: Показувати тільки Pending запити
+        const pendingRequests = data.filter(r => r.requestStatus === RequestStatus.Opened);
+        setReceivedRequests(pendingRequests);
       } else {
         const data = await groupsApi.getRequestsFromGroup(groupId);
-        setSentRequests(data);
+        // ФІКС: Показувати тільки Pending запити
+        const pendingRequests = data.filter(r => r.requestStatus === RequestStatus.Opened);
+        setSentRequests(pendingRequests);
       }
     } catch (error) {
       console.error('Failed to load requests:', error);
@@ -54,8 +58,11 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
   const handleAccept = async (requestId: number) => {
     try {
       await groupsApi.acceptRequestToGroup(requestId);
+      // Одразу видаляємо з UI
       setReceivedRequests((prev) => prev.filter((r) => r.id !== requestId));
       Alert.alert('Успішно', 'Запит прийнято');
+      // Перезавантажуємо для актуалізації
+      await loadRequests();
     } catch (error) {
       console.error('Failed to accept request:', error);
       Alert.alert('Помилка', 'Не вдалося прийняти запит');
@@ -65,8 +72,11 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
   const handleDecline = async (requestId: number) => {
     try {
       await groupsApi.declineRequestToGroup(requestId);
+      // Одразу видаляємо з UI
       setReceivedRequests((prev) => prev.filter((r) => r.id !== requestId));
       Alert.alert('Успішно', 'Запит відхилено');
+      // Перезавантажуємо для актуалізації
+      await loadRequests();
     } catch (error) {
       console.error('Failed to decline request:', error);
       Alert.alert('Помилка', 'Не вдалося відхилити запит');
@@ -76,8 +86,11 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
   const handleCancelSent = async (requestId: number) => {
     try {
       await groupsApi.cancelRequestFromGroup(requestId);
+      // Одразу видаляємо з UI
       setSentRequests((prev) => prev.filter((r) => r.id !== requestId));
       Alert.alert('Успішно', 'Запит скасовано');
+      // Перезавантажуємо для актуалізації
+      await loadRequests();
     } catch (error) {
       console.error('Failed to cancel request:', error);
       Alert.alert('Помилка', 'Не вдалося скасувати запит');
@@ -97,6 +110,8 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
               await Promise.all(receivedRequests.map((r) => groupsApi.acceptRequestToGroup(r.id)));
               setReceivedRequests([]);
               Alert.alert('Успішно', 'Всі запити прийнято');
+              // Перезавантажуємо для актуалізації
+              await loadRequests();
             } catch (error) {
               console.error('Failed to accept all:', error);
               Alert.alert('Помилка', 'Не вдалося прийняти запити');
@@ -121,6 +136,8 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
               await Promise.all(receivedRequests.map((r) => groupsApi.declineRequestToGroup(r.id)));
               setReceivedRequests([]);
               Alert.alert('Успішно', 'Всі запити відхилено');
+              // Перезавантажуємо для актуалізації
+              await loadRequests();
             } catch (error) {
               console.error('Failed to decline all:', error);
               Alert.alert('Помилка', 'Не вдалося відхилити запити');
@@ -145,6 +162,8 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
               await Promise.all(sentRequests.map((r) => groupsApi.cancelRequestFromGroup(r.id)));
               setSentRequests([]);
               Alert.alert('Успішно', 'Всі запити скасовано');
+              // Перезавантажуємо для актуалізації
+              await loadRequests();
             } catch (error) {
               console.error('Failed to cancel all:', error);
               Alert.alert('Помилка', 'Не вдалося скасувати запити');

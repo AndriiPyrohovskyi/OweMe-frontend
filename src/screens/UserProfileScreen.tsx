@@ -20,12 +20,16 @@ interface UserProfileScreenProps {
   userId?: number;
   username?: string;
   onBack: () => void;
+  onNavigateToCreateOwe?: (friendId: number) => void;
+  onNavigateToInviteToGroup?: (userId: number) => void;
 }
 
 const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ 
   userId, 
   username, 
-  onBack 
+  onBack,
+  onNavigateToCreateOwe,
+  onNavigateToInviteToGroup,
 }) => {
   const { user: currentUser } = useAuth();
   const [profileUser, setProfileUser] = useState<UserSearchResult | null>(null);
@@ -401,8 +405,123 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           )}
         </View>
 
-        {/* Action Button */}
+        {/* Action Button (Friend Request) */}
         {renderActionButton()}
+
+        {/* Quick Actions - якщо друзі */}
+        {profileUser.id !== currentUser?.id && friendshipStatus.areFriends && (
+          <View style={styles.quickActionsSection}>
+            <Text style={[typography.h3, styles.sectionTitle]}>Швидкі дії</Text>
+            <View style={styles.quickActionsRow}>
+              <TouchableOpacity 
+                style={styles.quickActionCard}
+                onPress={() => onNavigateToCreateOwe?.(profileUser.id)}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.coral15 }]}>
+                  <Icon name="homeIcon" size={24} color={colors.coral} />
+                </View>
+                <Text style={[typography.secondary, styles.quickActionText]}>Запросити борг</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.quickActionCard}
+                onPress={() => onNavigateToInviteToGroup?.(profileUser.id)}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.primary15 }]}>
+                  <Icon name="homeIcon" size={24} color={colors.primary} />
+                </View>
+                <Text style={[typography.secondary, styles.quickActionText]}>Запросити в групу</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Statistics Section */}
+        {profileUser.id !== currentUser?.id && friendshipStatus.areFriends && (
+          <View style={styles.statisticsSection}>
+            <Text style={[typography.h3, styles.sectionTitle]}>Статистика</Text>
+            
+            <View style={styles.statRow}>
+              <Icon name="homeIcon" size={20} color={colors.text70} />
+              <Text style={[typography.secondary, styles.statLabel]}>Спільні борги:</Text>
+              <Text style={[typography.main, styles.statValue]}>—</Text>
+            </View>
+
+            <View style={styles.statRow}>
+              <Icon name="homeIcon" size={20} color={colors.text70} />
+              <Text style={[typography.secondary, styles.statLabel]}>Спільні групи:</Text>
+              <Text style={[typography.main, styles.statValue]}>—</Text>
+            </View>
+
+            <View style={styles.statRow}>
+              <Icon name="homeIcon" size={20} color={colors.text70} />
+              <Text style={[typography.secondary, styles.statLabel]}>Спільні друзі:</Text>
+              <Text style={[typography.main, styles.statValue]}>—</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Admin Actions - закоментовано до додавання поля role в User type */}
+        {/* {currentUser?.role === 'Admin' && profileUser.id !== currentUser?.id && (
+          <View style={styles.adminSection}>
+            <Text style={[typography.h3, styles.sectionTitle, { color: colors.coral }]}>
+              Адміністрування
+            </Text>
+            
+            <View style={styles.adminButtonsRow}>
+              <Button
+                title="Модерувати профіль"
+                icon="homeIcon"
+                variant="yellow"
+                padding={12}
+                onPress={() => Alert.alert(
+                  'Модерація профілю',
+                  'Функція модерації буде додана найближчим часом.\n\nМожливості:\n- Зміна опису на шаблонний текст\n- Перейменування нецензурного контенту\n- Попередження користувача'
+                )}
+              />
+              
+              <View style={styles.adminButtonSpacing} />
+              
+              <Button
+                title={profileUser.isBanned ? 'Розбанити' : 'Забанити'}
+                icon="homeIcon"
+                variant="coral"
+                padding={12}
+                onPress={() => {
+                  const action = profileUser.isBanned ? 'розбанити' : 'забанити';
+                  Alert.alert(
+                    `Підтвердження`,
+                    `Ви впевнені, що хочете ${action} користувача @${profileUser.username}?`,
+                    [
+                      { text: 'Скасувати', style: 'cancel' },
+                      { 
+                        text: 'Так', 
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            // TODO: Викликати API для бану/розбану
+                            Alert.alert('Успіх', `Користувача успішно ${action}о`);
+                            loadUserProfile();
+                          } catch (e) {
+                            Alert.alert('Помилка', 'Не вдалося виконати дію');
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }}
+              />
+            </View>
+
+            {profileUser.isBanned && (
+              <View style={styles.bannedBadge}>
+                <Text style={[typography.secondary, { color: colors.coral }]}>
+                  ⚠️ Користувач заблокований
+                </Text>
+              </View>
+            )}
+          </View>
+        )} */}
       </ScrollView>
     </View>
   );
@@ -523,6 +642,79 @@ const styles = StyleSheet.create({
   },
   buttonSpacing: {
     height: 12,
+  },
+  quickActionsSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    color: colors.text,
+    marginBottom: 16,
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionCard: {
+    flex: 1,
+    backgroundColor: colors.card_surface,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.border_divider,
+  },
+  quickActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  quickActionText: {
+    color: colors.text,
+    textAlign: 'center',
+  },
+  statisticsSection: {
+    backgroundColor: colors.card_surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+  },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  statLabel: {
+    flex: 1,
+    color: colors.text70,
+  },
+  statValue: {
+    color: colors.text,
+    fontWeight: '600',
+  },
+  adminSection: {
+    backgroundColor: colors.card_surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: colors.coral,
+  },
+  adminButtonsRow: {
+    gap: 12,
+  },
+  adminButtonSpacing: {
+    height: 8,
+  },
+  bannedBadge: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: colors.coral15,
+    borderRadius: 12,
+    alignItems: 'center',
   },
 });
 

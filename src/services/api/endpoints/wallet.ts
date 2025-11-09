@@ -7,11 +7,12 @@ export interface WalletBalance {
 
 export interface Transaction {
   id: number;
-  type: 'deposit' | 'transfer' | 'payment' | 'refund';
+  type: 'deposit' | 'transfer' | 'payment' | 'refund' | 'debt_return_hold' | 'debt_return_release' | 'debt_return_transfer';
   amount: string;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'completed' | 'failed' | 'cancelled' | 'refunded';
   description?: string;
   createdAt: string;
+  relatedOweReturnId?: number;
   relatedUser?: {
     id: number;
     username: string;

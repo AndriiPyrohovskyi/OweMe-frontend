@@ -12,6 +12,7 @@ interface ButtonProps {
     variant?: 'purple' | 'green' | 'yellow' | "coral";
     padding?: number;
     style?: ViewStyle;
+    disabled?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -22,6 +23,7 @@ export const Button: React.FC<ButtonProps> = ({
     iconSize = 12,
     padding = 4,
     style,
+    disabled = false,
 }) => {
     const buttonStyle = [
         { padding: padding },
@@ -30,14 +32,13 @@ export const Button: React.FC<ButtonProps> = ({
         variant === 'green' && styles.green,
         variant === 'yellow' && styles.yellow,
         variant === 'coral' && styles.coral,
-        style,
-    ];
-    
+        style,]
     return (
         <TouchableOpacity
             style={buttonStyle}
             onPress={onPress}
             activeOpacity={0.7}
+            disabled={disabled}
         >
             <View style={styles.content}>
                 {icon && <Icon name={icon} size={iconSize} />}

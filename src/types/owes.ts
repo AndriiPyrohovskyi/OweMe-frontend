@@ -41,6 +41,17 @@ export interface OweReturn {
   participant: {
     id: number;
     sum: number;
+    oweItem?: {
+      id: number;
+      name: string;
+      fullOwe?: {
+        id: number;
+        name: string;
+        fromUser?: UserRef;
+      };
+    };
+    toUser?: UserRef;
+    group?: GroupRef;
   };
 }
 

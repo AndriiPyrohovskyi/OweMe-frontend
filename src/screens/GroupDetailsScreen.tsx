@@ -147,11 +147,19 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
     );
   }
 
-  const createdDate = new Date(group.createdAt);
+  // Розрахунок часу з моменту створення групи
+  const createdDate = group.createdAt ? new Date(group.createdAt) : null;
   const now = new Date();
-  const diffMonths = Math.floor(
-    (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
-  );
+  const diffMonthsCreated = createdDate 
+    ? Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
+    : 0;
+
+  // Розрахунок часу перебування користувача в групі
+  const currentMember = user ? members.find(m => m.user.id === user.id) : null;
+  const joinedDate = currentMember?.joinedAt ? new Date(currentMember.joinedAt) : null;
+  const diffMonthsJoined = joinedDate
+    ? Math.floor((now.getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
+    : 0;
 
   return (
     <View style={styles.container}>
@@ -212,15 +220,19 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
           <View style={styles.statItem}>
             <Icon name="friendsIcon" size={20} color={colors.text.secondary} />
             <Text style={[typography.caption, styles.statText]}>
-              Групу створено: {diffMonths > 0 ? `${diffMonths} міс.` : 'нещодавно'}
+              Групу створено: {createdDate 
+                ? createdDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })
+                : 'невідомо'}
             </Text>
           </View>
-          <View style={styles.statItem}>
-            <Icon name="friendsIcon" size={20} color={colors.coral} />
-            <Text style={[typography.caption, styles.statText]}>
-              Перебування в групі: {diffMonths > 0 ? `${diffMonths} міс.` : 'нещодавно'}
-            </Text>
-          </View>
+          {joinedDate && (
+            <View style={styles.statItem}>
+              <Icon name="friendsIcon" size={20} color={colors.coral} />
+              <Text style={[typography.caption, styles.statText]}>
+                Ви приєдналися: {joinedDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Action Buttons */}

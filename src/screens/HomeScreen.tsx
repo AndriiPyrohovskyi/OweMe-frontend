@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { walletApi } from '../services/api/endpoints';
+import { statisticsApi, SummaryStatistics } from '../services/api/endpoints/statistics';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { TopBar } from '../components/TopBar';
@@ -25,28 +26,36 @@ interface DebtItem {
 
 interface HomeScreenProps {
   onNavigateToProfile?: () => void;
+  onNavigateToNotifications?: () => void;
   onNavigateToFriends?: () => void;
   onNavigateToGroups?: () => void;
   onNavigateToTopUp?: () => void;
   onNavigateToTransfer?: () => void;
+  onNavigateToOwes?: () => void;
+  onNavigateToStatistics?: () => void;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ 
-  onNavigateToProfile, 
+  onNavigateToProfile,
+  onNavigateToNotifications,
   onNavigateToFriends, 
   onNavigateToGroups,
   onNavigateToTopUp,
   onNavigateToTransfer,
+  onNavigateToOwes,
+  onNavigateToStatistics,
 }) => {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'owe' | 'owed'>('owe'); // Вам винні / Ви винні
   const [loading, setLoading] = useState(true);
+  const [statistics, setStatistics] = useState<SummaryStatistics | null>(null);
   
-  // Завантаження балансу з API
+  // Завантаження балансу та статистики з API
   useEffect(() => {
     loadBalance();
+    loadStatistics();
   }, []);
 
   const loadBalance = async () => {
@@ -66,10 +75,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
+  const loadStatistics = async () => {
+    try {
+      const stats = await statisticsApi.getSummary();
+      setStatistics(stats);
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
+    }
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadBalance();
-    // TODO: Завантажити борги з API
+    await Promise.all([loadBalance(), loadStatistics()]);
     setRefreshing(false);
   };
   const [debtsOwed, setDebtsOwed] = useState<DebtItem[]>([
@@ -133,7 +150,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       <TopBar 
         userName={user?.username}
         onAvatarPress={onNavigateToProfile}
-        onNotificationPress={() => Alert.alert('Сповіщення', 'Функція в розробці')}
+        onNotificationPress={onNavigateToNotifications}
       />
 
       <ScrollView
@@ -181,6 +198,60 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
         </View>
 
+        {/* Quick Statistics */}
+        {statistics && (
+          <TouchableOpacity 
+            style={styles.statsCard}
+            onPress={onNavigateToStatistics}
+            activeOpacity={0.7}
+          >
+            <View style={styles.statsHeader}>
+              <Text style={styles.statsTitle}>📊 Швидка статистика</Text>
+              <Text style={styles.statsLink}>Детальніше →</Text>
+            </View>
+            
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{statistics.totalActiveOwes}</Text>
+                <Text style={styles.statLabel}>Активних боргів</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: colors.green }]}>
+                  {statistics.totalOwedToMe.toFixed(0)} ₴
+                </Text>
+                <Text style={styles.statLabel}>Вам винні</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={[styles.statValue, { color: colors.coral }]}>
+                  {statistics.totalIOweThem.toFixed(0)} ₴
+                </Text>
+                <Text style={styles.statLabel}>Ви винні</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{statistics.totalReturns}</Text>
+                <Text style={styles.statLabel}>Повернень</Text>
+              </View>
+            </View>
+
+            <View style={styles.balanceIndicator}>
+              <Text style={styles.balanceText}>
+                {statistics.totalOwedToMe - statistics.totalIOweThem >= 0 ? '📈' : '📉'}
+                {' '}Баланс:{' '}
+                <Text style={{
+                  color: statistics.totalOwedToMe - statistics.totalIOweThem >= 0 
+                    ? colors.green 
+                    : colors.coral
+                }}>
+                  {Math.abs(statistics.totalOwedToMe - statistics.totalIOweThem).toFixed(0)} ₴
+                </Text>
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Summary cards */}
         <View style={styles.summaryRow}>
           <TouchableOpacity style={[styles.summaryCard, { borderColor: colors.green }]} onPress={() => onNavigateToFriends?.()}>
@@ -193,7 +264,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <Text style={styles.summaryLabel}>Групи</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.summaryCard, { borderColor: colors.coral }]} onPress={() => { /* open owes tab in parent */ }}>
+          <TouchableOpacity style={[styles.summaryCard, { borderColor: colors.coral }]} onPress={() => onNavigateToOwes?.()}>
             <Text style={styles.summaryNumber}>{owesCount !== null ? owesCount : '-'}</Text>
             <Text style={styles.summaryLabel}>Борги</Text>
           </TouchableOpacity>
@@ -430,6 +501,61 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 2,
     borderColor: colors.green,
+  },
+  statsCard: {
+    backgroundColor: colors.card_surface,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: colors.purple,
+  },
+  statsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  statsTitle: {
+    ...typography.h3,
+    color: colors.text,
+  },
+  statsLink: {
+    ...typography.secondary,
+    color: colors.purple,
+    fontWeight: '600',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 12,
+  },
+  statItem: {
+    width: '47%',
+    alignItems: 'center',
+  },
+  statValue: {
+    ...typography.h2,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  statLabel: {
+    ...typography.secondary,
+    color: colors.text70,
+    textAlign: 'center',
+  },
+  balanceIndicator: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border_divider,
+    alignItems: 'center',
+  },
+  balanceText: {
+    ...typography.main,
+    color: colors.text,
+    fontWeight: '600',
   },
   summaryRow: {
     flexDirection: 'row',

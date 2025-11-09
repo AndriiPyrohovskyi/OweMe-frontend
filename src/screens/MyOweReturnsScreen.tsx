@@ -12,9 +12,10 @@ import { useAuth } from '../context/AuthContext';
 
 interface MyOweReturnsScreenProps {
   onBack: () => void;
+  onNavigateToOwe?: (oweId: number) => void;
 }
 
-export const MyOweReturnsScreen: React.FC<MyOweReturnsScreenProps> = ({ onBack }) => {
+export const MyOweReturnsScreen: React.FC<MyOweReturnsScreenProps> = ({ onBack, onNavigateToOwe }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'sent' | 'received'>('sent');
   const [returns, setReturns] = useState<OweReturn[]>([]);
@@ -169,17 +170,21 @@ export const MyOweReturnsScreen: React.FC<MyOweReturnsScreenProps> = ({ onBack }
           {returns.length === 0 ? (
             renderEmptyState()
           ) : (
-            returns.map((returnItem) => (
-              <OweReturnCard
-                key={returnItem.id}
-                oweReturn={returnItem}
-                variant={activeTab}
-                showActions={!actionLoading}
-                onAccept={activeTab === 'received' ? () => handleAccept(returnItem.id) : undefined}
-                onDecline={activeTab === 'received' ? () => handleDecline(returnItem.id) : undefined}
-                onCancel={activeTab === 'sent' ? () => handleCancel(returnItem.id) : undefined}
-              />
-            ))
+            returns.map((returnItem) => {
+              const oweId = returnItem.participant?.oweItem?.fullOwe?.id;
+              return (
+                <OweReturnCard
+                  key={returnItem.id}
+                  oweReturn={returnItem}
+                  variant={activeTab}
+                  showActions={!actionLoading}
+                  onPress={oweId && onNavigateToOwe ? () => onNavigateToOwe(oweId) : undefined}
+                  onAccept={activeTab === 'received' ? () => handleAccept(returnItem.id) : undefined}
+                  onDecline={activeTab === 'received' ? () => handleDecline(returnItem.id) : undefined}
+                  onCancel={activeTab === 'sent' ? () => handleCancel(returnItem.id) : undefined}
+                />
+              );
+            })
           )}
         </ScrollView>
       )}

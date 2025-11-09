@@ -36,8 +36,9 @@ const GroupRequestsScreen: React.FC<GroupRequestsScreenProps> = ({ onBack }) => 
         groupsApi.getMyRequestsFromGroups(), // запрошення від груп
         groupsApi.getMyRequestsToGroups(), // мої запити до груп
       ]);
-      setReceivedRequests(received);
-      setSentRequests(sent);
+      // ФІКС: Показувати тільки Pending запити
+      setReceivedRequests(received.filter(r => r.requestStatus === 'Opened'));
+      setSentRequests(sent.filter(r => r.requestStatus === 'Opened'));
     } catch (error: any) {
       console.error('Failed to load requests:', error);
       // Мок дані
@@ -160,18 +161,7 @@ const GroupRequestsScreen: React.FC<GroupRequestsScreenProps> = ({ onBack }) => 
         </View>
       )}
 
-      {activeTab === 'sent' && sentRequests.length > 0 && (
-        <View style={styles.bulkActions}>
-          <Button 
-            title="Скасувати всі" 
-            icon="homeIcon" 
-            variant="yellow" 
-            padding={12} 
-            onPress={handleCancelAll}
-            style={{ flex: 1 }}
-          />
-        </View>
-      )}
+      {/* Не показуємо bulk actions для sent requests, бо їх скасовують адміністратори */}
 
       <ScrollView
         style={styles.scrollView}
@@ -223,14 +213,11 @@ const GroupRequestsScreen: React.FC<GroupRequestsScreenProps> = ({ onBack }) => 
                     />
                   </View>
                 ) : (
-                  <Button
-                    title="Скасувати"
-                    icon="homeIcon"
-                    iconSize={16}
-                    variant="yellow"
-                    padding={8}
-                    onPress={() => handleCancel(request.id)}
-                  />
+                  <View style={styles.sentRequestInfo}>
+                    <Text style={[typography.secondary, { color: colors.text70 }]}>
+                      Очікує розгляду адміністраторами групи
+                    </Text>
+                  </View>
                 )}
               </View>
             );
@@ -300,6 +287,13 @@ const styles = StyleSheet.create({
   requestAvatarText: { ...typography.h3, color: colors.text },
   requestName: { ...typography.main, fontWeight: '600', color: colors.text },
   requestActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  sentRequestInfo: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: colors.yellow15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
   emptyState: { alignItems: 'center', paddingVertical: 60 },
   emptyIcon: { fontSize: 64, marginBottom: 12 },
   emptyText: { ...typography.h3, color: colors.text, textAlign: 'center' },

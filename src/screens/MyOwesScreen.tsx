@@ -16,13 +16,18 @@ interface MyOwesScreenProps {
   onCreateOwe: () => void;
   onViewOwe: (oweId: number) => void;
   onNavigateToReturns: () => void;
+  onNavigateToProfile?: () => void;
+  onNavigateToNotifications?: () => void;
+  onNavigateToUserProfile?: (userId: number) => void;
 }
-
 export const MyOwesScreen: React.FC<MyOwesScreenProps> = ({
   onBack,
   onCreateOwe,
   onViewOwe,
   onNavigateToReturns,
+  onNavigateToProfile,
+  onNavigateToNotifications,
+  onNavigateToUserProfile,
 }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'sent' | 'received'>('sent');
@@ -39,10 +44,10 @@ export const MyOwesScreen: React.FC<MyOwesScreenProps> = ({
       
       const response = await owesApi.getMyFullOwes();
       
-      // Backend returns { sent: [], received: [] }
+      // Backend returns { sended: [], received: [] }
       if (response && typeof response === 'object') {
         const data = response as any;
-        setSentOwes(data.sent || []);
+        setSentOwes(data.sended || []);
         setReceivedOwes(data.received || []);
       }
     } catch (err: any) {
@@ -89,8 +94,8 @@ export const MyOwesScreen: React.FC<MyOwesScreenProps> = ({
       {/* Add top bar for avatar, app name */}
       <TopBar 
         userName={user?.username} 
-        onAvatarPress={() => {}} 
-        onNotificationPress={() => {}} 
+        onAvatarPress={onNavigateToProfile || (() => {})} 
+        onNotificationPress={onNavigateToNotifications || (() => {})} 
       />
       <HeaderBar
         title="Мої борги"
@@ -174,6 +179,7 @@ export const MyOwesScreen: React.FC<MyOwesScreenProps> = ({
                 owe={owe}
                 onPress={() => onViewOwe(owe.id)}
                 variant={activeTab}
+                onUserPress={onNavigateToUserProfile}
               />
             ))
           )}

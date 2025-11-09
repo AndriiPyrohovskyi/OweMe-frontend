@@ -22,6 +22,7 @@ interface GroupsScreenProps {
   onNavigateToGroupDetails?: (groupId: number) => void;
   onNavigateToCreateOweForGroup?: (groupId: number) => void;
   onNavigateToProfile?: (userId?: number) => void;
+  onNavigateToNotifications?: () => void;
 }
 
 const GroupsScreen: React.FC<GroupsScreenProps> = ({
@@ -31,6 +32,7 @@ const GroupsScreen: React.FC<GroupsScreenProps> = ({
   onNavigateToGroupDetails,
   onNavigateToCreateOweForGroup,
   onNavigateToProfile,
+  onNavigateToNotifications,
 }) => {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
@@ -106,7 +108,7 @@ const GroupsScreen: React.FC<GroupsScreenProps> = ({
       <TopBar 
         userName={user?.username}
         onAvatarPress={() => onNavigateToProfile?.(user?.id)}
-        onNotificationPress={() => Alert.alert('Сповіщення', 'Функція в розробці')}
+        onNotificationPress={onNavigateToNotifications}
       />
 
       {/* Title */}

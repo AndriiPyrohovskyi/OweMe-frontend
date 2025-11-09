@@ -55,7 +55,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 anchorPosition && {
                   position: 'absolute',
                   top: anchorPosition.y,
-                  left: anchorPosition.x ?? 16,
+                  right: 16, // Завжди справа з відступом
                 }
               ]}
             >

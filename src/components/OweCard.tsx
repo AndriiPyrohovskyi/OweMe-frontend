@@ -10,9 +10,10 @@ interface OweCardProps {
   owe: FullOwe;
   onPress: () => void;
   variant: 'sent' | 'received';
+  onUserPress?: (userId: number) => void;
 }
 
-export const OweCard: React.FC<OweCardProps> = ({ owe, onPress, variant }) => {
+export const OweCard: React.FC<OweCardProps> = ({ owe, onPress, variant, onUserPress }) => {
   // Calculate total sum and overall status
   const calculateTotals = () => {
     let totalSum = 0;
@@ -63,9 +64,14 @@ export const OweCard: React.FC<OweCardProps> = ({ owe, onPress, variant }) => {
               {owe.name}
             </Text>
             {variant === 'received' && user && (
-              <Text style={[typography.secondary, styles.username]}>
-                від @{user.username}
-              </Text>
+              <TouchableOpacity 
+                onPress={() => onUserPress?.(user.id)}
+                disabled={!onUserPress}
+              >
+                <Text style={[typography.secondary, styles.username]}>
+                  від @{user.username}
+                </Text>
+              </TouchableOpacity>
             )}
           </View>
         </View>

@@ -179,6 +179,24 @@ const GroupDashboardScreen: React.FC<GroupDashboardScreenProps> = ({
           <Text style={[typography.caption, styles.headerSubtitle]}>
             {members.length} учасників
           </Text>
+          {group.createdAt && (
+            <Text style={[typography.caption, styles.headerDate]}>
+              Створено: {new Date(group.createdAt).toLocaleDateString('uk-UA', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+              })}
+            </Text>
+          )}
+          {user && members.find(m => m.user.id === user.id)?.joinedAt && (
+            <Text style={[typography.caption, styles.headerDate]}>
+              Ви приєдналися: {new Date(members.find(m => m.user.id === user.id)!.joinedAt).toLocaleDateString('uk-UA', { 
+                day: 'numeric', 
+                month: 'short', 
+                year: 'numeric' 
+              })}
+            </Text>
+          )}
         </View>
         {onOpenMenu && (
           <TouchableOpacity 
@@ -434,6 +452,11 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     color: colors.text.secondary,
+  },
+  headerDate: {
+    color: colors.text70,
+    fontSize: 11,
+    marginTop: 2,
   },
   menuButton: {
     padding: 4,

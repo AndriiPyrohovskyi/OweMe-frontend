@@ -22,12 +22,14 @@ interface FriendsScreenProps {
   onNavigateToRequests?: () => void;
   onNavigateToProfile?: (userId: number) => void;
   onNavigateToCreateOwe?: (friendId: number) => void;
+  onNavigateToNotifications?: () => void;
 }
 
 const FriendsScreen: React.FC<FriendsScreenProps> = ({
   onNavigateToAddFriend,
   onNavigateToRequests,
   onNavigateToProfile,
+  onNavigateToNotifications,
   onNavigateToCreateOwe,
 }) => {
   const { user } = useAuth();
@@ -99,7 +101,7 @@ const FriendsScreen: React.FC<FriendsScreenProps> = ({
       <TopBar 
         userName={user?.username}
         onAvatarPress={() => onNavigateToProfile?.(user?.id || 0)}
-        onNotificationPress={() => Alert.alert('Сповіщення', 'Функція в розробці')}
+        onNotificationPress={onNavigateToNotifications}
       />
 
       {/* Title */}

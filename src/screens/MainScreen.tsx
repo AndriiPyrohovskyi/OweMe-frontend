@@ -33,6 +33,12 @@ import OweDetailsScreen from './OweDetailsScreen';
 import MyOweReturnsScreen from './MyOweReturnsScreen';
 import CreateOweReturnScreen from './CreateOweReturnScreen';
 import GroupOwesScreen from './GroupOwesScreen';
+import { WalletScreen } from './WalletScreen';
+import { DepositScreen } from './DepositScreen';
+import { TransferScreen } from './TransferScreen';
+import { NotificationsScreen } from './NotificationsScreen';
+import StatisticsScreen from './StatisticsScreen';
+import AchievementsScreen from './AchievementsScreen';
 
 type MainScreenProps = {
   navigation: NavigationProp<any>;
@@ -60,6 +66,11 @@ type OwesSubScreen =
   | { type: 'createReturn'; participantId: number }
   | { type: 'groupOwes'; groupId: number };
 
+type WalletSubScreen = 
+  | { type: 'main' }
+  | { type: 'deposit' }
+  | { type: 'transfer' };
+
 type ProfileSubScreen = 'view' | 'edit';
 
 export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
@@ -68,21 +79,111 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
   const [friendsSubScreen, setFriendsSubScreen] = useState<'list' | 'add' | 'requests'>('list');
   const [groupsSubScreen, setGroupsSubScreen] = useState<GroupSubScreen>({ type: 'list' });
   const [owesSubScreen, setOwesSubScreen] = useState<OwesSubScreen>({ type: 'list' });
+  const [walletSubScreen, setWalletSubScreen] = useState<WalletSubScreen | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [profileSubScreen, setProfileSubScreen] = useState<ProfileSubScreen>('view');
   const [viewingUserProfile, setViewingUserProfile] = useState<number | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   
   const handleLogout = async () => {
     await logout();
   };
   
   const renderContent = () => {
+    // Якщо відкритий гаманець
+    if (walletSubScreen) {
+      if (walletSubScreen.type === 'deposit') {
+        return (
+          <DepositScreen
+            onBack={() => setWalletSubScreen({ type: 'main' })}
+            onSuccess={() => setWalletSubScreen({ type: 'main' })}
+          />
+        );
+      } else if (walletSubScreen.type === 'transfer') {
+        return (
+          <TransferScreen
+            onBack={() => setWalletSubScreen({ type: 'main' })}
+            onSuccess={() => setWalletSubScreen({ type: 'main' })}
+          />
+        );
+      }
+      // main wallet screen
+      return (
+        <WalletScreen
+          onBack={() => setWalletSubScreen(null)}
+          onDeposit={() => setWalletSubScreen({ type: 'deposit' })}
+          onTransfer={() => setWalletSubScreen({ type: 'transfer' })}
+          onNavigateToUser={(userId) => {
+            setWalletSubScreen(null);
+            setViewingUserProfile(userId);
+          }}
+          onNavigateToOwe={(oweId) => {
+            setWalletSubScreen(null);
+            setActiveTab('Борги');
+            setOwesSubScreen({ type: 'details', oweId });
+          }}
+          onNavigateToReturn={(returnId) => {
+            // Перейти до списку returns, користувач побачить цей return
+            setWalletSubScreen(null);
+            setActiveTab('Борги');
+            setOwesSubScreen({ type: 'returns' });
+            // TODO: можна додати підсвітку конкретного return або автоматичне відкриття деталей
+          }}
+        />
+      );
+    }
+
+    // Якщо відкриті сповіщення
+    if (showNotifications) {
+      return (
+        <NotificationsScreen 
+          onBack={() => setShowNotifications(false)}
+        />
+      );
+    }
+
+    // Якщо відкрита статистика
+    if (showStatistics) {
+      return (
+        <StatisticsScreen 
+          onClose={() => setShowStatistics(false)}
+          onNavigateToUserProfile={(userId) => {
+            setShowStatistics(false);
+            setViewingUserProfile(userId);
+          }}
+        />
+      );
+    }
+
+    // Якщо відкриті досягнення
+    if (showAchievements) {
+      return (
+        <AchievementsScreen 
+          onClose={() => setShowAchievements(false)}
+        />
+      );
+    }
+
     // Якщо переглядається профіль іншого користувача
     if (viewingUserProfile) {
       return (
         <UserProfileScreen 
           userId={viewingUserProfile}
           onBack={() => setViewingUserProfile(null)}
+          onNavigateToCreateOwe={(friendId) => {
+            setViewingUserProfile(null);
+            setActiveTab('Борги');
+            setOwesSubScreen({ type: 'create', friendId });
+          }}
+          onNavigateToInviteToGroup={(userId) => {
+            // TODO: Додати можливість вибору групи для запрошення
+            Alert.alert(
+              'Запросити в групу',
+              'Функція запрошення користувача в групу буде доступна найближчим часом. Зараз ви можете запросити користувача через екран групи.'
+            );
+          }}
         />
       );
     }
@@ -108,10 +209,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
         return (
           <HomeScreen 
             onNavigateToProfile={() => setShowProfile(true)}
+            onNavigateToNotifications={() => setShowNotifications(true)}
             onNavigateToFriends={() => setActiveTab('Друзі')}
             onNavigateToGroups={() => setActiveTab('Групи')}
+            onNavigateToOwes={() => setActiveTab('Борги')}
             onNavigateToTransfer={() => setActiveTab('Борги')}
-            onNavigateToTopUp={() => Alert.alert('Поповнення', 'Відкрити екран поповнення (в розробці)')}
+            onNavigateToTopUp={() => setWalletSubScreen({ type: 'main' })}
+            onNavigateToStatistics={() => setShowStatistics(true)}
           />
         );
       case "Друзі":
@@ -135,6 +239,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
             onNavigateToAddFriend={() => setFriendsSubScreen('add')}
             onNavigateToRequests={() => setFriendsSubScreen('requests')}
             onNavigateToProfile={(username) => setViewingUserProfile(username)}
+            onNavigateToNotifications={() => setShowNotifications(true)}
             onNavigateToCreateOwe={(friendId) => {
               setActiveTab("Борги");
               setOwesSubScreen({ type: 'create', friendId });
@@ -227,6 +332,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
             onNavigateToGroupRequests={() => setGroupsSubScreen({ type: 'requests' })}
             onNavigateToFindGroup={() => setGroupsSubScreen({ type: 'find' })}
             onNavigateToGroupDetails={(groupId) => setGroupsSubScreen({ type: 'dashboard', groupId })}
+            onNavigateToNotifications={() => setShowNotifications(true)}
             onNavigateToCreateOweForGroup={(groupId) => {
               setActiveTab('Борги');
               setOwesSubScreen({ type: 'create', friendId: undefined });
@@ -256,12 +362,25 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
               onCreateReturn={(participantId) => 
                 setOwesSubScreen({ type: 'createReturn', participantId })
               }
+              onNavigateToUser={(userId) => {
+                // Перейти до профілю користувача
+                setViewingUserProfile(userId);
+              }}
+              onNavigateToGroup={(groupId) => {
+                // Перейти до деталей групи
+                setActiveTab('Групи');
+                setGroupsSubScreen({ type: 'dashboard', groupId });
+              }}
             />
           );
         } else if (owesSubScreen.type === 'returns') {
           return (
             <MyOweReturnsScreen
               onBack={() => setOwesSubScreen({ type: 'list' })}
+              onNavigateToOwe={(oweId) => {
+                // Перейти до деталей боргу
+                setOwesSubScreen({ type: 'details', oweId });
+              }}
             />
           );
         } else if (owesSubScreen.type === 'createReturn' && 'participantId' in owesSubScreen) {
@@ -287,6 +406,9 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
             onCreateOwe={() => setOwesSubScreen({ type: 'create' })}
             onViewOwe={(oweId) => setOwesSubScreen({ type: 'details', oweId })}
             onNavigateToReturns={() => setOwesSubScreen({ type: 'returns' })}
+            onNavigateToUserProfile={(userId) => setViewingUserProfile(userId)}
+            onNavigateToProfile={() => setShowProfile(true)}
+            onNavigateToNotifications={() => setShowNotifications(true)}
           />
         );
       case "Налаштування":
@@ -294,13 +416,52 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
       case "Інше":
         return (
           <View style={styles.otherContainer}>
-            <Button
-              title="Вийти"
-              icon="homeIcon"
-              onPress={handleLogout}
-              variant="coral"
-              padding={16}
-            />
+            <Text style={[typography.h2, styles.otherTitle]}>Інше</Text>
+            
+            <View style={styles.otherSection}>
+              <Text style={[typography.h3, styles.sectionTitle]}>Аналітика</Text>
+              
+              <Button
+                title="📊 Статистика"
+                icon="homeIcon"
+                onPress={() => setShowStatistics(true)}
+                variant="purple"
+                padding={16}
+                style={styles.otherButton}
+              />
+              
+              <Button
+                title="🏆 Досягнення"
+                icon="homeIcon"
+                onPress={() => setShowAchievements(true)}
+                variant="yellow"
+                padding={16}
+                style={styles.otherButton}
+              />
+            </View>
+
+            <View style={styles.otherSection}>
+              <Text style={[typography.h3, styles.sectionTitle]}>Гаманець</Text>
+              
+              <Button
+                title="💳 Мій гаманець"
+                icon="homeIcon"
+                onPress={() => setWalletSubScreen({ type: 'main' })}
+                variant="green"
+                padding={16}
+                style={styles.otherButton}
+              />
+            </View>
+
+            <View style={styles.otherSection}>
+              <Button
+                title="Вийти"
+                icon="homeIcon"
+                onPress={handleLogout}
+                variant="coral"
+                padding={16}
+              />
+            </View>
           </View>
         );
       default:
@@ -314,8 +475,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
         <View style={styles.contentContainer}>
           {renderContent()}
         </View>
-  {/* Hide TabBar when in GroupDashboard, viewing profile, or when showing Profile */}
-  {!showProfile && groupsSubScreen.type !== 'dashboard' && !viewingUserProfile && (
+  {/* Hide TabBar when in GroupDashboard, viewing profile, wallet, or when showing Profile */}
+  {!showProfile && groupsSubScreen.type !== 'dashboard' && !viewingUserProfile && !walletSubScreen && (
           <TabBar
             onTabChange={(tab) => {
               setActiveTab(tab.name);
@@ -368,9 +529,22 @@ const styles = StyleSheet.create({
   },
   otherContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
+    paddingTop: 60,
+  },
+  otherTitle: {
+    color: colors.text,
+    marginBottom: 24,
+  },
+  otherSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    color: colors.text,
+    marginBottom: 12,
+  },
+  otherButton: {
+    marginBottom: 12,
   },
 });
 

@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
 import { TextInput } from '../components/TextInput';
+import { usersApi } from '../services/api/endpoints/users';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 
@@ -27,17 +28,29 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) => {
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (!user?.id) {
+      Alert.alert('Помилка', 'Користувач не знайдений');
+      return;
+    }
+
     try {
       setSaving(true);
       
-      // TODO: Виклик API для оновлення профілю
-      // await usersApi.updateProfile({ firstName, lastName, username, description: bio });
+      // Виклик API для оновлення профілю
+      await usersApi.updateUser(user.id, {
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+        username: username.trim() || undefined,
+        description: bio.trim() || undefined,
+      });
       
       Alert.alert('Успіх', 'Профіль оновлено!', [
         { text: 'OK', onPress: onBack }
       ]);
-    } catch (error) {
-      Alert.alert('Помилка', 'Не вдалося оновити профіль');
+    } catch (error: any) {
+      console.error('Failed to update profile:', error);
+      const message = error.response?.data?.message || 'Не вдалося оновити профіль';
+      Alert.alert('Помилка', message);
     } finally {
       setSaving(false);
     }
@@ -92,11 +105,12 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) => {
         </View>
 
         <Button
-          title="Зберегти"
+          title={saving ? "Збереження..." : "Зберегти"}
           icon="homeIcon"
           variant="green"
           padding={14}
           onPress={handleSave}
+          disabled={saving}
           style={styles.saveButton}
         />
       </ScrollView>

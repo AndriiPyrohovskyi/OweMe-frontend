@@ -7,16 +7,22 @@ import { Button } from '../components/Button';
 import { HeaderBar } from '../components/HeaderBar';
 import { FullOwe, OweItem } from '../types/owes';
 import { owesApi } from '../services/api/endpoints/owes';
+import { walletApi } from '../services/api/endpoints/wallet';
 import { StatusBadge } from '../components/StatusBadge';
 import { OweParticipantCard } from '../components/OweParticipantCard';
+import { DebtReturnCard } from '../components/DebtReturnCard';
+import { TextInput } from '../components/TextInput';
 import Icon from '../components/Icon';
 import { useAuth } from '../context/AuthContext';
+import { useDebtReturn } from '../hooks/useDebtReturn';
 
 interface OweDetailsScreenProps {
   oweId: number;
   onBack: () => void;
   onEdit: () => void;
   onCreateReturn: (participantId: number) => void;
+  onNavigateToUser?: (userId: number) => void;
+  onNavigateToGroup?: (groupId: number) => void;
 }
 
 export const OweDetailsScreen: React.FC<OweDetailsScreenProps> = ({
@@ -24,6 +30,8 @@ export const OweDetailsScreen: React.FC<OweDetailsScreenProps> = ({
   onBack,
   onEdit,
   onCreateReturn,
+  onNavigateToUser,
+  onNavigateToGroup,
 }) => {
   const { user } = useAuth();
   const [owe, setOwe] = useState<FullOwe | null>(null);
@@ -159,6 +167,18 @@ export const OweDetailsScreen: React.FC<OweDetailsScreenProps> = ({
           const variant = isOwner ? 'sent' : 'received';
           const showActions = participant.status === 'Opened';
 
+          // Визначаємо onPress для навігації
+          let participantOnPress: (() => void) | undefined;
+          
+          // Пріоритет: Create return для accepted participant > Navigate to user/group
+          if (participant.status === 'Accepted' && isParticipantUser) {
+            participantOnPress = () => onCreateReturn(participant.id);
+          } else if (participant.toUser && onNavigateToUser) {
+            participantOnPress = () => onNavigateToUser(participant.toUser!.id);
+          } else if (participant.group && onNavigateToGroup) {
+            participantOnPress = () => onNavigateToGroup(participant.group!.id);
+          }
+
           return (
             <OweParticipantCard
               key={participant.id}
@@ -168,11 +188,7 @@ export const OweDetailsScreen: React.FC<OweDetailsScreenProps> = ({
               onAccept={isParticipantUser ? () => handleAcceptParticipant(participant.id) : undefined}
               onDecline={isParticipantUser ? () => handleDeclineParticipant(participant.id) : undefined}
               onCancel={isOwner ? () => handleCancelParticipant(participant.id) : undefined}
-              onPress={
-                participant.status === 'Accepted' && isParticipantUser
-                  ? () => onCreateReturn(participant.id)
-                  : undefined
-              }
+              onPress={participantOnPress}
             />
           );
         })}

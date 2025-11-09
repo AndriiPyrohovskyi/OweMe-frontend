@@ -80,6 +80,7 @@ export interface OweReturn {
   status: ReturnStatus;
   createdAt: Date;
   updatedAt: Date;
+  holdTransactionId?: number; // ID транзакції заморожених коштів
   participant: {
     id: number;
     sum: number;

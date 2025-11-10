@@ -9,8 +9,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { friendsApi, UserSearchResult, FriendshipStatus } from '../services/api/endpoints/friends';
+import { usersApi } from '../services/api/endpoints/users';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
 import colors from '../theme/colors';
@@ -32,6 +34,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   onNavigateToInviteToGroup,
 }) => {
   const { user: currentUser } = useAuth();
+  const insets = useSafeAreaInsets();
   const [profileUser, setProfileUser] = useState<UserSearchResult | null>(null);
   const [friendshipStatus, setFriendshipStatus] = useState<FriendshipStatus>({
     areFriends: false,
@@ -40,6 +43,9 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const [friendCount, setFriendCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminStats, setAdminStats] = useState<any>(null);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -49,6 +55,13 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
     setLoading(true);
     try {
       let user: UserSearchResult | null = null;
+
+      if (!currentUser) return;
+
+      const role = await usersApi.getCurrentRole(currentUser.id);
+      const adminStatus = role === 'Admin';
+      setIsAdmin(adminStatus);
+
 
       // Завантажити дані користувача
       if (username) {
@@ -78,6 +91,15 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
       } else {
         const count = await friendsApi.getFriendCount(user.id);
         setFriendCount(count);
+      }
+
+      if (adminStatus && user.id !== currentUser?.id) {
+        try {
+          const stats = await usersApi.getAdminStats(user.id);
+          setAdminStats(stats);
+        } catch (error) {
+          console.error('Failed to load admin stats:', error);
+        }
       }
     } catch (error: any) {
       console.error('Failed to load user profile:', error);
@@ -168,6 +190,81 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
             } catch (error: any) {
               console.error('Failed to cancel request:', error);
               Alert.alert('Помилка', 'Не вдалося скасувати запит');
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleBanUser = async () => {
+    if (!profileUser) return;
+    
+    if (profileUser.id === currentUser?.id) {
+      Alert.alert('Помилка', 'Ви не можете заблокувати самого себе!');
+      return;
+    }
+    
+    Alert.alert(
+      'Заблокувати користувача',
+      `Ви впевнені, що хочете заблокувати ${profileUser.username}?`,
+      [
+        { text: 'Скасувати', style: 'cancel' },
+        {
+          text: 'Заблокувати',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await usersApi.banUser({ userId: profileUser.id, reason: 'Banned by admin' });
+              Alert.alert('Успіх', 'Користувача заблоковано');
+              await loadUserProfile();
+            } catch (error: any) {
+              const message = error.response?.data?.message || 'Не вдалося заблокувати користувача';
+              Alert.alert('Помилка', message);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUnbanUser = async () => {
+    if (!profileUser) return;
+    setActionLoading(true);
+    try {
+      await usersApi.unbanUser({ userId: profileUser.id });
+      Alert.alert('Успіх', 'Користувача розблоковано');
+      await loadUserProfile();
+    } catch (error: any) {
+      Alert.alert('Помилка', 'Не вдалося розблокувати користувача');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetFields = async () => {
+    if (!profileUser) return;
+    Alert.alert(
+      'Скинути поля',
+      'Скинути ім\'я, прізвище та опис до дефолтних значень?',
+      [
+        { text: 'Скасувати', style: 'cancel' },
+        {
+          text: 'Скинути',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await usersApi.resetFields(profileUser.id);
+              Alert.alert('Успіх', 'Поля скинуто');
+              await loadUserProfile();
+            } catch (error: any) {
+              Alert.alert('Помилка', 'Не вдалося скинути поля');
             } finally {
               setActionLoading(false);
             }
@@ -325,7 +422,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Icon name="homeIcon" size={28} color={colors.text} />
         </TouchableOpacity>
@@ -461,67 +558,107 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           </View>
         )}
 
-        {/* Admin Actions - закоментовано до додавання поля role в User type */}
-        {/* {currentUser?.role === 'Admin' && profileUser.id !== currentUser?.id && (
+        {isAdmin && profileUser.id !== currentUser?.id && (
           <View style={styles.adminSection}>
-            <Text style={[typography.h3, styles.sectionTitle, { color: colors.coral }]}>
-              Адміністрування
-            </Text>
-            
-            <View style={styles.adminButtonsRow}>
-              <Button
-                title="Модерувати профіль"
-                icon="homeIcon"
-                variant="yellow"
-                padding={12}
-                onPress={() => Alert.alert(
-                  'Модерація профілю',
-                  'Функція модерації буде додана найближчим часом.\n\nМожливості:\n- Зміна опису на шаблонний текст\n- Перейменування нецензурного контенту\n- Попередження користувача'
-                )}
+            <TouchableOpacity 
+              style={styles.adminHeader}
+              onPress={() => setShowAdminPanel(!showAdminPanel)}
+            >
+              <Text style={[typography.h3, styles.adminTitle]}>
+                Адміністрування
+              </Text>
+              <Icon 
+                name="homeIcon" 
+                size={20} 
+                color={colors.coral}
               />
-              
-              <View style={styles.adminButtonSpacing} />
-              
-              <Button
-                title={profileUser.isBanned ? 'Розбанити' : 'Забанити'}
-                icon="homeIcon"
-                variant="coral"
-                padding={12}
-                onPress={() => {
-                  const action = profileUser.isBanned ? 'розбанити' : 'забанити';
-                  Alert.alert(
-                    `Підтвердження`,
-                    `Ви впевнені, що хочете ${action} користувача @${profileUser.username}?`,
-                    [
-                      { text: 'Скасувати', style: 'cancel' },
-                      { 
-                        text: 'Так', 
-                        style: 'destructive',
-                        onPress: async () => {
-                          try {
-                            // TODO: Викликати API для бану/розбану
-                            Alert.alert('Успіх', `Користувача успішно ${action}о`);
-                            loadUserProfile();
-                          } catch (e) {
-                            Alert.alert('Помилка', 'Не вдалося виконати дію');
-                          }
-                        }
-                      }
-                    ]
-                  );
-                }}
-              />
-            </View>
+            </TouchableOpacity>
 
-            {profileUser.isBanned && (
-              <View style={styles.bannedBadge}>
-                <Text style={[typography.secondary, { color: colors.coral }]}>
-                  ⚠️ Користувач заблокований
-                </Text>
-              </View>
+            {showAdminPanel && (
+              <>
+                {adminStats && (
+                  <View style={styles.adminStatsSection}>
+                    <Text style={[typography.secondary, styles.adminStatsTitle]}>Детальна статистика:</Text>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Email:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>{adminStats.email}</Text>
+                    </View>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Дата реєстрації:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>
+                        {new Date(adminStats.createdAt).toLocaleDateString('uk-UA')}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Друзів:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>{adminStats.stats.totalFriends}</Text>
+                    </View>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Груп:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>{adminStats.stats.totalGroups}</Text>
+                    </View>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Надано боргів:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>{adminStats.stats.sentOwes}</Text>
+                    </View>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Отримано боргів:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>{adminStats.stats.receivedOwes}</Text>
+                    </View>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Загальний борг:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>{adminStats.stats.totalDebt} ₴</Text>
+                    </View>
+                    
+                    <View style={styles.adminStatRow}>
+                      <Text style={[typography.caption, styles.adminStatLabel]}>Загальна сума надано:</Text>
+                      <Text style={[typography.secondary, styles.adminStatValue]}>{adminStats.stats.totalLent} ₴</Text>
+                    </View>
+
+                    {adminStats.isBanned && (
+                      <View style={styles.bannedInfo}>
+                        <Text style={[typography.caption, styles.bannedLabel]}>Заблоковано:</Text>
+                        <Text style={[typography.secondary, styles.bannedReason]}>{adminStats.banReason}</Text>
+                        <Text style={[typography.caption, styles.bannedDate]}>
+                          {new Date(adminStats.bannedAt).toLocaleDateString('uk-UA')}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                <View style={styles.adminButtonsRow}>
+                  <Button
+                    title="Скинути поля"
+                    icon="homeIcon"
+                    variant="yellow"
+                    padding={12}
+                    onPress={handleResetFields}
+                    disabled={actionLoading}
+                    style={styles.adminButton}
+                  />
+                  
+                  <Button
+                    title={adminStats?.isBanned ? 'Розбанити' : 'Забанити'}
+                    icon="homeIcon"
+                    variant="coral"
+                    padding={12}
+                    onPress={adminStats?.isBanned ? handleUnbanUser : handleBanUser}
+                    disabled={actionLoading}
+                    style={styles.adminButton}
+                  />
+                </View>
+              </>
             )}
           </View>
-        )} */}
+        )}
       </ScrollView>
     </View>
   );
@@ -703,8 +840,60 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.coral,
   },
+  adminHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  adminTitle: {
+    color: colors.coral,
+  },
+  adminStatsSection: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  adminStatsTitle: {
+    color: colors.text,
+    marginBottom: 12,
+    fontWeight: '600',
+  },
+  adminStatRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  adminStatLabel: {
+    color: colors.text70,
+  },
+  adminStatValue: {
+    color: colors.text,
+  },
+  bannedInfo: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: colors.coral15,
+    borderRadius: 8,
+  },
+  bannedLabel: {
+    color: colors.coral,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  bannedReason: {
+    color: colors.text,
+    marginBottom: 4,
+  },
+  bannedDate: {
+    color: colors.text70,
+  },
   adminButtonsRow: {
     gap: 12,
+  },
+  adminButton: {
+    width: '100%',
   },
   adminButtonSpacing: {
     height: 8,

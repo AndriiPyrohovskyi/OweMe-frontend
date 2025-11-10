@@ -78,6 +78,16 @@ export interface RequestFromGroup extends GroupRequest {
     lastName?: string;
     avatarUrl?: string;
   };
+}
+
+export interface GroupOwe {
+  fromUserId: number;
+  fromUserName: string;
+  fromUserAvatar?: string;
+  toUserId: number;
+  toUserName: string;
+  toUserAvatar?: string;
+  totalDebt: string;
   canceledBy?: GroupMember;
 }
 
@@ -127,6 +137,11 @@ export const groupsApi = {
     return response;
   },
 
+  getGroupOwes: async (groupId: number): Promise<GroupOwe[]> => {
+    const response = await apiClient.get<GroupOwe[]>(`/groups/${groupId}/owes`);
+    return response;
+  },
+
   getRequestsToGroup: async (groupId: number): Promise<RequestToGroup[]> => {
     const response = await apiClient.get<RequestToGroup[]>(`/groups/${groupId}/requests/to`);
     return response;
@@ -144,6 +159,11 @@ export const groupsApi = {
 
   getMyRequestsFromGroups: async (): Promise<RequestFromGroup[]> => {
     const response = await apiClient.get<RequestFromGroup[]>('/groups/requests/from/my');
+    return response;
+  },
+
+  searchGroups: async (query: string): Promise<Group[]> => {
+    const response = await apiClient.get<Group[]>(`/groups/search?query=${encodeURIComponent(query)}`);
     return response;
   },
 

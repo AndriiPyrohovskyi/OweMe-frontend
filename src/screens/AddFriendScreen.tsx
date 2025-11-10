@@ -6,7 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { friendsApi, UserSearchResult } from '../services/api/endpoints/friends';
 import colors from '../theme/colors';
@@ -25,6 +27,7 @@ const AddFriendScreen: React.FC<AddFriendScreenProps> = ({
   onNavigateToProfile 
 }) => {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -74,7 +77,7 @@ const AddFriendScreen: React.FC<AddFriendScreenProps> = ({
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Icon name="homeIcon" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -102,11 +105,18 @@ const AddFriendScreen: React.FC<AddFriendScreenProps> = ({
               onPress={() => onNavigateToProfile?.(result.id)}
             >
               <View style={styles.userInfo}>
-                <View style={styles.userAvatar}>
-                  <Text style={styles.userAvatarText}>
-                    {result.username[0].toUpperCase()}
-                  </Text>
-                </View>
+                {result.avatarUrl ? (
+                  <Image 
+                    source={{ uri: result.avatarUrl }} 
+                    style={styles.userAvatar}
+                  />
+                ) : (
+                  <View style={[styles.userAvatar, styles.userAvatarPlaceholder]}>
+                    <Text style={styles.userAvatarText}>
+                      {result.username[0].toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{result.username}</Text>
                   {(result.firstName || result.lastName) && (
@@ -244,6 +254,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+  },
+  userAvatarPlaceholder: {
     backgroundColor: colors.green15,
     justifyContent: 'center',
     alignItems: 'center',

@@ -7,10 +7,13 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { launchImageLibrary, launchCamera, ImagePickerResponse } from 'react-native-image-picker';
 import { useAuth } from '../context/AuthContext';
-import { groupsApi, Group, GroupMember, GroupsUserRole } from '../services/api/endpoints/groups';
+import { groupsApi, Group, GroupMember, GroupsUserRole, GroupOwe } from '../services/api/endpoints/groups';
+import { uploadApi } from '../services/api/endpoints/upload';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
 import colors from '../theme/colors';
@@ -43,6 +46,7 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
   const insets = useSafeAreaInsets();
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [owes, setOwes] = useState<GroupOwe[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,7 +59,6 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
       const groupData = await groupsApi.getGroup(groupId);
       setGroup(groupData);
       
-      // Try to load members, but don't fail if endpoint doesn't exist
       try {
         const membersData = await groupsApi.getGroupMembers(groupId);
         setMembers(membersData);
@@ -63,11 +66,87 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
         console.log('Members endpoint not available yet');
         setMembers([]);
       }
+
+      try {
+        const owesData = await groupsApi.getGroupOwes(groupId);
+        setOwes(owesData);
+      } catch (owesError) {
+        console.log('Owes endpoint not available yet');
+        setOwes([]);
+      }
     } catch (error) {
       console.error('Failed to load group details:', error);
       Alert.alert('Помилка', 'Не вдалося завантажити дані групи');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageSelect = (response: ImagePickerResponse) => {
+    if (response.didCancel) {
+      return;
+    }
+
+    if (response.errorCode) {
+      Alert.alert('Помилка', 'Не вдалося вибрати фото');
+      return;
+    }
+
+    const asset = response.assets?.[0];
+    if (asset) {
+      uploadGroupAvatar(asset);
+    }
+  };
+
+  const handleChangePhoto = () => {
+    Alert.alert(
+      'Змінити фото',
+      'Оберіть джерело фото',
+      [
+        {
+          text: 'Камера',
+          onPress: () => {
+            launchCamera(
+              {
+                mediaType: 'photo',
+                quality: 0.8,
+                saveToPhotos: false,
+              },
+              handleImageSelect
+            );
+          },
+        },
+        {
+          text: 'Галерея',
+          onPress: () => {
+            launchImageLibrary(
+              {
+                mediaType: 'photo',
+                quality: 0.8,
+              },
+              handleImageSelect
+            );
+          },
+        },
+        { text: 'Скасувати', style: 'cancel' },
+      ]
+    );
+  };
+
+  const uploadGroupAvatar = async (asset: any) => {
+    try {
+      const result = await uploadApi.uploadGroupAvatar(groupId, asset);
+      console.log('Upload result:', result);
+      if (group && result && result.avatarUrl) {
+        setGroup({ ...group, avatarUrl: result.avatarUrl });
+        Alert.alert('Успіх', 'Фото групи оновлено');
+      } else {
+        console.error('Invalid result:', result);
+        Alert.alert('Помилка', 'Отримано невірну відповідь від сервера');
+      }
+    } catch (error) {
+      console.error('Failed to upload group avatar:', error);
+      Alert.alert('Помилка', 'Не вдалося завантажити фото');
     }
   };
 
@@ -81,7 +160,6 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
           text: 'Видалити',
           style: 'destructive',
           onPress: () => {
-            // TODO: Implement photo deletion
             console.log('Delete photo');
           },
         },
@@ -161,6 +239,17 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
     ? Math.floor((now.getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
     : 0;
 
+  // Розрахунок статистики боргів
+  const myOwesToOthers = owes
+    .filter(owe => owe.fromUserId === user?.id)
+    .reduce((sum, owe) => sum + parseFloat(owe.totalDebt), 0);
+
+  const othersOweToMe = owes
+    .filter(owe => owe.toUserId === user?.id)
+    .reduce((sum, owe) => sum + parseFloat(owe.totalDebt), 0);
+
+  const totalGroupDebts = owes.reduce((sum, owe) => sum + parseFloat(owe.totalDebt), 0);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -184,10 +273,18 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
             )}
           </View>
           {canEditGroup && (
-            <TouchableOpacity style={styles.deletePhotoButton} onPress={handleDeletePhoto}>
-              <Icon name="trash" size={16} color={colors.background.primary} />
-              <Text style={styles.deletePhotoText}>Видалити фото</Text>
-            </TouchableOpacity>
+            <View style={styles.avatarButtonsContainer}>
+              <TouchableOpacity style={styles.changePhotoButton} onPress={handleChangePhoto}>
+                <Icon name="camera" size={16} color={colors.background.primary} />
+                <Text style={styles.changePhotoText}>Змінити фото</Text>
+              </TouchableOpacity>
+              {group.avatarUrl && (
+                <TouchableOpacity style={styles.deletePhotoButton} onPress={handleDeletePhoto}>
+                  <Icon name="trash" size={16} color={colors.background.primary} />
+                  <Text style={styles.deletePhotoText}>Видалити фото</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
 
@@ -206,15 +303,9 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
         {/* Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Icon name="friendsIcon" size={20} color={colors.primary} />
+            <Icon name="friendsIcon" size={20} color={colors.text.secondary} />
             <Text style={[typography.caption, styles.statText]}>
-              Вам винні: <Text style={styles.statValue}>120</Text>
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Icon name="friendsIcon" size={20} color={colors.coral} />
-            <Text style={[typography.caption, styles.statText]}>
-              Ви винні: <Text style={styles.statValue}>50 123</Text>
+              Учасників: <Text style={styles.statValue}>{members.length}</Text>
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -234,6 +325,71 @@ const GroupDetailsScreen: React.FC<GroupDetailsScreenProps> = ({
             </View>
           )}
         </View>
+
+        {/* Debt Statistics */}
+        {owes.length > 0 && (
+          <View style={styles.debtStatsContainer}>
+            <Text style={[typography.h3, styles.sectionTitle]}>Статистика боргів</Text>
+            <View style={styles.debtStatsGrid}>
+              <View style={styles.debtStatCard}>
+                <Icon name="friendsIcon" size={24} color={colors.green} />
+                <Text style={[typography.caption, styles.debtStatLabel]}>Вам винні</Text>
+                <Text style={[typography.h2, styles.debtStatValue, { color: colors.green }]}>
+                  {othersOweToMe.toFixed(2)} ₴
+                </Text>
+              </View>
+              <View style={styles.debtStatCard}>
+                <Icon name="friendsIcon" size={24} color={colors.coral} />
+                <Text style={[typography.caption, styles.debtStatLabel]}>Ви винні</Text>
+                <Text style={[typography.h2, styles.debtStatValue, { color: colors.coral }]}>
+                  {myOwesToOthers.toFixed(2)} ₴
+                </Text>
+              </View>
+              <View style={styles.debtStatCard}>
+                <Icon name="friendsIcon" size={24} color={colors.primary} />
+                <Text style={[typography.caption, styles.debtStatLabel]}>Всього в групі</Text>
+                <Text style={[typography.h2, styles.debtStatValue, { color: colors.primary }]}>
+                  {totalGroupDebts.toFixed(2)} ₴
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Owes Section */}
+        {owes.length > 0 && (
+          <View style={styles.owesSection}>
+            <Text style={[typography.h3, styles.sectionTitle]}>Борги в групі</Text>
+            {owes.map((owe, index) => (
+              <View key={index} style={styles.oweItem}>
+                <View style={styles.oweUsers}>
+                  <View style={styles.oweUserContainer}>
+                    {owe.fromUserAvatar ? (
+                      <Image source={{ uri: owe.fromUserAvatar }} style={styles.oweAvatar} />
+                    ) : (
+                      <View style={[styles.oweAvatar, styles.oweAvatarPlaceholder]}>
+                        <Icon name="profileIcon" size={20} color={colors.text.secondary} />
+                      </View>
+                    )}
+                    <Text style={typography.caption}>{owe.fromUserName}</Text>
+                  </View>
+                  <Icon name="arrowRight" size={20} color={colors.text.secondary} />
+                  <View style={styles.oweUserContainer}>
+                    {owe.toUserAvatar ? (
+                      <Image source={{ uri: owe.toUserAvatar }} style={styles.oweAvatar} />
+                    ) : (
+                      <View style={[styles.oweAvatar, styles.oweAvatarPlaceholder]}>
+                        <Icon name="profileIcon" size={20} color={colors.text.secondary} />
+                      </View>
+                    )}
+                    <Text style={typography.caption}>{owe.toUserName}</Text>
+                  </View>
+                </View>
+                <Text style={[typography.h3, styles.oweAmount]}>{parseFloat(owe.totalDebt).toFixed(2)} ₴</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actionsSection}>
@@ -344,6 +500,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  avatarButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  changePhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.green,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  changePhotoText: {
+    ...typography.caption,
+    color: colors.background.primary,
+    fontFamily: 'Poppins-SemiBold',
+  },
   deletePhotoButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -444,6 +618,69 @@ const styles = StyleSheet.create({
   actionButtonTextCoral: {
     ...typography.button,
     color: colors.background.primary,
+  },
+  debtStatsContainer: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  debtStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  debtStatCard: {
+    flex: 1,
+    minWidth: 100,
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    gap: 8,
+  },
+  debtStatLabel: {
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  debtStatValue: {
+    textAlign: 'center',
+  },
+  owesSection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    marginBottom: 16,
+  },
+  oweItem: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  oweUsers: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  oweUserContainer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  oweAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  oweAvatarPlaceholder: {
+    backgroundColor: colors.background.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  oweAmount: {
+    color: colors.green,
   },
 });
 

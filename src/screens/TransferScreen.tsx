@@ -7,6 +7,7 @@ import {
   Alert,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeaderBar } from '../components/HeaderBar';
@@ -179,11 +180,18 @@ export const TransferScreen: React.FC<TransferScreenProps> = ({
                   onPress={() => setSelectedFriendId(friend.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.friendAvatar}>
-                    <Text style={styles.friendAvatarText}>
-                      {friend.username.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
+                  {friend.avatarUrl ? (
+                    <Image 
+                      source={{ uri: friend.avatarUrl }} 
+                      style={styles.friendAvatar}
+                    />
+                  ) : (
+                    <View style={[styles.friendAvatar, styles.friendAvatarPlaceholder]}>
+                      <Text style={styles.friendAvatarText}>
+                        {friend.username.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
                   <View style={styles.friendInfo}>
                     <Text
                       style={[
@@ -296,10 +304,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    marginRight: 12,
+  },
+  friendAvatarPlaceholder: {
     backgroundColor: colors.primary70,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   friendAvatarText: {
     fontSize: 20,

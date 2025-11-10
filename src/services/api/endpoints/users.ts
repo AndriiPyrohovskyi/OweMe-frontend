@@ -39,12 +39,12 @@ export interface GiveRoleDto {
 }
 
 export interface BanUserDto {
-  targetUserId: number;
-  banReason?: string;
+  userId: number;
+  reason?: string;
 }
 
 export interface UnbanUserDto {
-  targetUserId: number;
+  userId: number;
 }
 
 export const usersApi = {
@@ -56,7 +56,7 @@ export const usersApi = {
   
   // Get user role
   getCurrentRole: (targetUserId: number) => 
-    api.get<{ role: UserRole }>(`/users/userRole?targetUserId=${targetUserId}`),
+    api.get<UserRole>(`/users/userRole?targetUserId=${targetUserId}`),
   
   // Get user change logs
   getUserInLogs: (targetUserId: number) => 
@@ -97,4 +97,10 @@ export const usersApi = {
   // Delete user (admin only)
   deleteUser: (targetUserId: number) => 
     api.delete<void>(`/users/user/${targetUserId}`),
+
+  getAdminStats: (userId: number) => 
+    api.get(`/users/${userId}/admin-stats`),
+
+  resetFields: (userId: number) => 
+    api.post(`/users/${userId}/reset-fields`, {}),
 };

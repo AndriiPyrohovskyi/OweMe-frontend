@@ -256,9 +256,9 @@ const FriendRequestsScreen: React.FC<FriendRequestsScreenProps> = ({
                   </View>
                   <View style={styles.requestUserInfo}>
                     <Text style={styles.requestName}>{otherUser.username}</Text>
-                    {(otherUser.firstName || otherUser.lastName) && (
-                      <Text style={styles.requestFullName}>
-                        {[otherUser.firstName, otherUser.lastName].filter(Boolean).join(' ')}
+                                        {otherUser.firstName && (
+                      <Text style={[typography.body, styles.friendName]}>
+                        {otherUser.firstName}
                       </Text>
                     )}
                   </View>

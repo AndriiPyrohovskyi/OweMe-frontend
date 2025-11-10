@@ -90,10 +90,11 @@ export const MyOwesScreen: React.FC<MyOwesScreenProps> = ({
   const currentOwes = activeTab === 'sent' ? sentOwes : receivedOwes;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Add top bar for avatar, app name */}
       <TopBar 
-        userName={user?.username} 
+        userName={user?.username}
+        avatarUrl={user?.avatarUrl}
         onAvatarPress={onNavigateToProfile || (() => {})} 
         onNotificationPress={onNavigateToNotifications || (() => {})} 
       />

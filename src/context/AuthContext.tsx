@@ -12,6 +12,8 @@ interface User {
   avatarUrl?: string;
   description?: string;
   isBanned?: boolean;
+  banReason?: string;
+  bannedAt?: string;
   createdAt?: string;
 }
 
@@ -23,6 +25,7 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
+    refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,11 +77,23 @@ export const AuthProvider = ({ children } : { children: ReactNode}) => {
           throw error;
         }
     };
+
     const logout = async () => {
         await authStorage.clearAll();
         setUser(null);
         setToken(null);
     };
+
+    const refreshUser = async () => {
+        try {
+            const profile = await authApi.getProfile();
+            setUser(profile);
+            await authStorage.setUser(profile);
+        } catch (error) {
+            console.error('Failed to refresh user:', error);
+        }
+    };
+
     useEffect(() => {
         checkAuth();
     }, []);
@@ -91,6 +106,7 @@ export const AuthProvider = ({ children } : { children: ReactNode}) => {
         login,
         logout,
         checkAuth,
+        refreshUser,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

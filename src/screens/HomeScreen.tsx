@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { walletApi } from '../services/api/endpoints';
 import { statisticsApi, SummaryStatistics } from '../services/api/endpoints/statistics';
+import { owesApi, FullOwe, OweParticipant, OweStatus } from '../services/api/endpoints/owes';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { TopBar } from '../components/TopBar';
@@ -34,6 +36,207 @@ interface HomeScreenProps {
   onNavigateToOwes?: () => void;
   onNavigateToStatistics?: () => void;
 }
+
+// Quick Debts Section Component
+interface QuickDebtsSectionProps {
+  onNavigateToOwes?: () => void;
+}
+
+const QuickDebtsSection: React.FC<QuickDebtsSectionProps> = ({ onNavigateToOwes }) => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [myOwes, setMyOwes] = useState<FullOwe[]>([]);
+  const [owedToMe, setOwedToMe] = useState<OweParticipant[]>([]);
+
+  useEffect(() => {
+    loadQuickDebts();
+  }, []);
+
+  const loadQuickDebts = async () => {
+    try {
+      setLoading(true);
+      
+      let owesArray: FullOwe[] = [];
+      let participantsArray: OweParticipant[] = [];
+      
+      // Завантажити мої борги (я створив FullOwe)
+      try {
+        const owesData = await owesApi.getMyFullOwes();
+        console.log('📊 Quick Debts - My Owes:', owesData);
+        // Backend returns { sended: FullOwe[], received: FullOwe[] }
+        if (owesData && typeof owesData === 'object') {
+          const d = owesData as any;
+          if (Array.isArray(d.sended)) owesArray = d.sended;
+          else if (Array.isArray(d)) owesArray = d as FullOwe[]; // defensive
+        } else if (Array.isArray(owesData)) {
+          owesArray = owesData as FullOwe[];
+        }
+      } catch (err) {
+        console.error('Failed to load my owes:', err);
+      }
+      
+      // Завантажити борги де мені винні (я toUser в OweParticipant)
+      try {
+        const participantsData = await owesApi.getMyOweParticipants();
+        console.log('📊 Quick Debts - Owed to Me:', participantsData);
+        // Backend may return { out: OweParticipant[], in: OweParticipant[] }
+        if (participantsData && typeof participantsData === 'object') {
+          const p = participantsData as any;
+          if (Array.isArray(p.in)) participantsArray = p.in;
+          else if (Array.isArray(p)) participantsArray = p as OweParticipant[]; // defensive
+        } else if (Array.isArray(participantsData)) {
+          participantsArray = participantsData as OweParticipant[];
+        }
+      } catch (err) {
+        console.error('Failed to load participants:', err);
+      }
+      
+      // Фільтруємо тільки Accepted статус
+      const activeOwes = owesArray.filter(owe => {
+        if (!owe || !owe.oweItems || !Array.isArray(owe.oweItems)) return false;
+        return owe.oweItems.some(item => {
+          if (!item || !item.oweParticipants || !Array.isArray(item.oweParticipants)) return false;
+          return item.oweParticipants.some(p => p && p.status === OweStatus.Accepted);
+        });
+      });
+      
+      const activeParticipants = participantsArray.filter(p => p && p.status === OweStatus.Accepted);
+      
+      console.log('📊 Active Owes:', activeOwes.length);
+      console.log('📊 Active Participants:', activeParticipants.length);
+      console.log('📊 Active Owes data:', activeOwes);
+      console.log('📊 Active Participants data:', activeParticipants);
+      
+      setMyOwes(activeOwes.slice(0, 3)); // Топ 3
+      setOwedToMe(activeParticipants.slice(0, 3)); // Топ 3
+    } catch (error) {
+      console.error('Failed to load quick debts:', error);
+      setMyOwes([]);
+      setOwedToMe([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={quickDebtsStyles.container}>
+        <View style={quickDebtsStyles.header}>
+          <Text style={quickDebtsStyles.title}>💰 Швидкий огляд боргів</Text>
+        </View>
+        <View style={quickDebtsStyles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      </View>
+    );
+  }
+
+  if (myOwes.length === 0 && owedToMe.length === 0) {
+    return (
+      <View style={quickDebtsStyles.container}>
+        <View style={quickDebtsStyles.header}>
+          <Text style={quickDebtsStyles.title}>💰 Швидкий огляд боргів</Text>
+          <TouchableOpacity onPress={onNavigateToOwes}>
+            <Text style={quickDebtsStyles.seeAll}>Переглянути всі →</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={quickDebtsStyles.emptyContainer}>
+          <Text style={quickDebtsStyles.emptyText}>🎉 У вас немає активних боргів</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={quickDebtsStyles.container}>
+      <View style={quickDebtsStyles.header}>
+        <Text style={quickDebtsStyles.title}>💰 Швидкий огляд боргів</Text>
+        <TouchableOpacity onPress={onNavigateToOwes}>
+          <Text style={quickDebtsStyles.seeAll}>Переглянути всі →</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Вам винні */}
+      {owedToMe.length > 0 && (
+        <View style={quickDebtsStyles.section}>
+          <Text style={quickDebtsStyles.sectionTitle}>💚 Вам винні</Text>
+          {owedToMe.map((participant) => {
+            const displayAmount = Number(participant.sum) || 0;
+            return (
+              <TouchableOpacity
+                key={participant.id}
+                style={quickDebtsStyles.debtItem}
+                onPress={onNavigateToOwes}
+                activeOpacity={0.7}
+              >
+                <View style={quickDebtsStyles.debtInfo}>
+                  <Text style={quickDebtsStyles.debtName}>
+                    {participant.oweItem?.name || 'Без назви'}
+                  </Text>
+                  <Text style={quickDebtsStyles.debtDescription}>
+                    від {participant.toUser?.username || participant.group?.name || 'Невідомо'}
+                  </Text>
+                </View>
+                <View style={quickDebtsStyles.amountContainer}>
+                  <Text style={[quickDebtsStyles.debtAmount, { color: colors.green }]}>
+                    +{displayAmount.toFixed(0)} ₴
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Ви винні */}
+      {myOwes.length > 0 && (
+        <View style={quickDebtsStyles.section}>
+          <Text style={quickDebtsStyles.sectionTitle}>💸 Ви винні</Text>
+          {myOwes.map((owe) => {
+            if (!owe.oweItems || !Array.isArray(owe.oweItems)) {
+              return null;
+            }
+            
+            const totalAmount = owe.oweItems.reduce((sum, item) => {
+              if (!item.oweParticipants || !Array.isArray(item.oweParticipants)) {
+                return sum;
+              }
+              return sum + item.oweParticipants
+                .filter(p => p && p.status === OweStatus.Accepted)
+                .reduce((pSum, p) => {
+                  const amount = Number(p.sum) || 0;
+                  return pSum + amount;
+                }, 0);
+            }, 0);
+            
+            const displayAmount = Number(totalAmount) || 0;
+            
+            return (
+              <TouchableOpacity
+                key={owe.id}
+                style={quickDebtsStyles.debtItem}
+                onPress={onNavigateToOwes}
+                activeOpacity={0.7}
+              >
+                <View style={quickDebtsStyles.debtInfo}>
+                  <Text style={quickDebtsStyles.debtName}>{owe.name || 'Без назви'}</Text>
+                  <Text style={quickDebtsStyles.debtDescription}>
+                    {owe.oweItems.length} позиці{owe.oweItems.length === 1 ? 'я' : 'ї'}
+                  </Text>
+                </View>
+                <View style={quickDebtsStyles.amountContainer}>
+                  <Text style={[quickDebtsStyles.debtAmount, { color: colors.coral }]}>
+                    -{displayAmount.toFixed(0)} ₴
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+};
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ 
   onNavigateToProfile,
@@ -134,8 +337,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
       try {
         const owesApi = (await import('../services/api/endpoints/owes')).owesApi;
-        const myOwes = await owesApi.getMyFullOwes();
-        setOwesCount(myOwes?.length ?? 0);
+        const myOwes: any = await owesApi.getMyFullOwes();
+        // myOwes can be { sended: [], received: [] } or an array
+        if (myOwes && typeof myOwes === 'object') {
+          if (Array.isArray(myOwes)) {
+            setOwesCount(myOwes.length);
+          } else {
+            const len = (Array.isArray(myOwes.sended) ? myOwes.sended.length : 0) + 
+                       (Array.isArray(myOwes.received) ? myOwes.received.length : 0);
+            setOwesCount(len);
+          }
+        } else {
+          setOwesCount(0);
+        }
       } catch (e) {
         setOwesCount(null);
       }
@@ -149,6 +363,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Header */}
       <TopBar 
         userName={user?.username}
+        avatarUrl={user?.avatarUrl}
         onAvatarPress={onNavigateToProfile}
         onNotificationPress={onNavigateToNotifications}
       />
@@ -251,6 +466,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             </View>
           </TouchableOpacity>
         )}
+
+        {/* Quick Debts Overview */}
+        <QuickDebtsSection onNavigateToOwes={onNavigateToOwes} />
 
         {/* Summary cards */}
         <View style={styles.summaryRow}>
@@ -610,6 +828,85 @@ const styles = StyleSheet.create({
   createGroupText: {
     ...typography.CTA,
     color: colors.text,
+  },
+});
+
+// Styles for QuickDebtsSection
+const quickDebtsStyles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.card_surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  title: {
+    ...typography.h3,
+    color: colors.text,
+  },
+  seeAll: {
+    ...typography.secondary,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.main,
+    color: colors.text70,
+    textAlign: 'center',
+  },
+  section: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    ...typography.main,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  debtItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  debtInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  debtName: {
+    ...typography.main,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  debtDescription: {
+    ...typography.secondary,
+    color: colors.text70,
+  },
+  amountContainer: {
+    alignItems: 'flex-end',
+  },
+  debtAmount: {
+    ...typography.numbers,
+    fontWeight: '600',
   },
 });
 

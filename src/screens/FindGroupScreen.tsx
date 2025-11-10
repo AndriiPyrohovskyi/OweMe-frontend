@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { groupsApi } from '../services/api/endpoints/groups';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
@@ -26,6 +27,7 @@ interface GroupSearchResult {
 }
 
 const FindGroupScreen: React.FC<FindGroupScreenProps> = ({ onBack }) => {
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<GroupSearchResult[]>([]);
   const [sentRequests, setSentRequests] = useState<Set<number>>(new Set());
@@ -37,9 +39,14 @@ const FindGroupScreen: React.FC<FindGroupScreenProps> = ({ onBack }) => {
     }
 
     try {
-      // TODO: Implement group search when backend endpoint is available
-      Alert.alert('В розробці', 'Пошук груп ще не реалізовано на бекенді');
-      setSearchResults([]);
+      const groups = await groupsApi.searchGroups(searchQuery);
+      const results: GroupSearchResult[] = groups.map(group => ({
+        id: group.id,
+        name: group.name,
+        tag: group.tag,
+        memberCount: group.members?.length || 0,
+      }));
+      setSearchResults(results);
     } catch (error: any) {
       console.error('Failed to search groups:', error);
       Alert.alert('Помилка', 'Не вдалося знайти групи');
@@ -60,7 +67,7 @@ const FindGroupScreen: React.FC<FindGroupScreenProps> = ({ onBack }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Icon name="homeIcon" size={24} color={colors.text} />
         </TouchableOpacity>

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
@@ -21,6 +22,7 @@ interface EditProfileScreenProps {
 
 const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) => {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [username, setUsername] = useState(user?.username || '');
@@ -59,7 +61,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Icon name="homeIcon" size={28} color={colors.text} />
         </TouchableOpacity>
@@ -74,7 +76,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ onBack }) => {
       >
         <View style={styles.formSection}>
           <TextInput
-            label="Ім'я та прізвище"
+            label="Ім'я"
             value={firstName}
             onChangeText={setFirstName}
             placeholder="Роман"

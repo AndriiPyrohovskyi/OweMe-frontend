@@ -78,7 +78,7 @@ export interface OweItem {
   id: number;
   name: string;
   description?: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   createdAt: Date;
   updatedAt: Date;
   fullOwe: {

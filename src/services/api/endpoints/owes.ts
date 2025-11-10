@@ -39,7 +39,7 @@ export interface OweItem {
   id: number;
   name: string;
   description?: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   createdAt: Date;
   updatedAt: Date;
   fullOwe: {
@@ -98,7 +98,7 @@ export interface CreateOweItemDto {
   sum: number;
   name: string;
   description?: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   participants: CreateOweParticipantDto[];
 }
 
@@ -134,7 +134,7 @@ export interface UpdateOweItemDto {
   sum?: number;
   name?: string;
   description?: string;
-  imageUrl?: string;
+  imageUrls?: string[];
   status?: OweStatus;
 }
 
@@ -185,6 +185,7 @@ export const owesApi = {
 
   // Get owe item by ID
   getOweItem: (id: number) => api.get<OweItem>(`/owes/items/${id}`),
+  getOweItemById: (id: number) => api.get<OweItem>(`/owes/items/${id}`),
 
   // ---------------------------------- GET Owe Participants ------------------------------------
   // Get all owe participants (admin only)

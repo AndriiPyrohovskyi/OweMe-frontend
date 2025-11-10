@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Image,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { groupsApi, Group } from '../services/api/endpoints/groups';
@@ -14,6 +15,7 @@ import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { TopBar } from '../components/TopBar';
 import { Button } from '../components/Button';
+import { Icon } from '../components/Icon';
 
 interface GroupsScreenProps {
   onNavigateToCreateGroup?: () => void;
@@ -107,6 +109,7 @@ const GroupsScreen: React.FC<GroupsScreenProps> = ({
       {/* Header */}
       <TopBar 
         userName={user?.username}
+        avatarUrl={user?.avatarUrl}
         onAvatarPress={() => onNavigateToProfile?.(user?.id)}
         onNotificationPress={onNavigateToNotifications}
       />
@@ -162,11 +165,18 @@ const GroupsScreen: React.FC<GroupsScreenProps> = ({
               onPress={() => onNavigateToGroupDetails?.(group.id)}
             >
               <View style={styles.groupHeader}>
-                <View style={styles.groupAvatar}>
-                  <Text style={styles.groupAvatarText}>
-                    {group.name[0].toUpperCase()}
-                  </Text>
-                </View>
+                {group.avatarUrl ? (
+                  <Image 
+                    source={{ uri: group.avatarUrl }} 
+                    style={styles.groupAvatar}
+                  />
+                ) : (
+                  <View style={[styles.groupAvatar, styles.groupAvatarPlaceholder]}>
+                    <Text style={styles.groupAvatarText}>
+                      {group.name[0].toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.groupInfo}>
                   <Text style={styles.groupName}>{group.name}</Text>
                   <Text style={styles.groupTag}>{group.tag}</Text>
@@ -353,6 +363,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+  },
+  groupAvatarPlaceholder: {
     backgroundColor: colors.primary70,
     justifyContent: 'center',
     alignItems: 'center',

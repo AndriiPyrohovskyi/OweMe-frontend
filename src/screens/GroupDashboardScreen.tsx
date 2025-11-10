@@ -28,6 +28,7 @@ interface GroupDashboardScreenProps {
   onNavigateToAddMember?: () => void;
   onNavigateToDetails?: () => void;
   onNavigateToOwes?: () => void;
+  onNavigateToDebtStatus?: () => void;
 }
 
 interface Debt {
@@ -53,6 +54,7 @@ const GroupDashboardScreen: React.FC<GroupDashboardScreenProps> = ({
   onNavigateToAddMember,
   onNavigateToDetails,
   onNavigateToOwes,
+  onNavigateToDebtStatus,
 }) => {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -121,8 +123,7 @@ const GroupDashboardScreen: React.FC<GroupDashboardScreenProps> = ({
         onNavigateToAddMember?.();
         break;
       case 'debt-status':
-        // TODO: Create and navigate to debt status screen
-        Alert.alert('В розробці', 'Екран боргових статусів ще не реалізовано');
+        onNavigateToDebtStatus?.();
         break;
       case 'stats':
         // TODO: Create and navigate to statistics screen

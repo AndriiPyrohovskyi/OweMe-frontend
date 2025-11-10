@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Image,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { friendsApi, Friend } from '../services/api/endpoints/friends';
@@ -100,6 +101,7 @@ const FriendsScreen: React.FC<FriendsScreenProps> = ({
       {/* Header */}
       <TopBar 
         userName={user?.username}
+        avatarUrl={user?.avatarUrl}
         onAvatarPress={() => onNavigateToProfile?.(user?.id || 0)}
         onNotificationPress={onNavigateToNotifications}
       />
@@ -152,16 +154,20 @@ const FriendsScreen: React.FC<FriendsScreenProps> = ({
               onPress={() => onNavigateToProfile?.(friend.id)}
             >
               <View style={styles.friendHeader}>
-                <View style={styles.friendAvatar}>
-                  <Text style={styles.friendAvatarText}>
-                    {friend.username[0].toUpperCase()}
-                  </Text>
-                </View>
+                {friend.avatarUrl ? (
+                  <Image source={{ uri: friend.avatarUrl }} style={styles.friendAvatar} />
+                ) : (
+                  <View style={[styles.friendAvatar, styles.friendAvatarPlaceholder]}>
+                    <Text style={styles.friendAvatarText}>
+                      {friend.username[0].toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.friendInfo}>
                   <Text style={styles.friendName}>{friend.username}</Text>
-                  {(friend.firstName || friend.lastName) && (
-                    <Text style={styles.friendFullName}>
-                      {[friend.firstName, friend.lastName].filter(Boolean).join(' ')}
+                  {friend.firstName && (
+                    <Text style={[typography.body, styles.friendName]}>
+                      {friend.firstName}
                     </Text>
                   )}
                 </View>
@@ -313,6 +319,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+  },
+  friendAvatarPlaceholder: {
     backgroundColor: colors.primary70,
     justifyContent: 'center',
     alignItems: 'center',

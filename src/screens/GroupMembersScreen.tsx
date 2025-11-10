@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { groupsApi, GroupMember, GroupsUserRole } from '../services/api/endpoints/groups';
@@ -206,7 +207,7 @@ const GroupMembersScreen: React.FC<GroupMembersScreenProps> = ({
   };
 
   const renderMember = (member: GroupMember) => {
-    const fullName = [member.user.firstName, member.user.lastName]
+    const fullName = [member.user.firstName]
       .filter(Boolean)
       .join(' ') || member.user.username;
 
@@ -217,9 +218,16 @@ const GroupMembersScreen: React.FC<GroupMembersScreenProps> = ({
           onPress={() => onNavigateToProfile?.(member.user.id)}
           disabled={!onNavigateToProfile}
         >
-          <View style={styles.avatar}>
-            <Icon name="homeIcon" size={32} color={colors.text70} />
-          </View>
+          {member.user.avatarUrl ? (
+            <Image 
+              source={{ uri: member.user.avatarUrl }} 
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Icon name="homeIcon" size={32} color={colors.text70} />
+            </View>
+          )}
           <View style={styles.memberDetails}>
             <Text style={styles.memberName}>{fullName}</Text>
             <Text style={styles.memberUsername}>@{member.user.username}</Text>
@@ -417,10 +425,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    marginRight: 12,
+  },
+  avatarPlaceholder: {
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   memberDetails: {
     flex: 1,

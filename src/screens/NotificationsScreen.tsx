@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 import { HeaderBar } from '../components/HeaderBar';
@@ -17,7 +16,7 @@ interface NotificationsScreenProps {
 
 export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack }) => {
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <HeaderBar title="Сповіщення" onBack={onBack} />
       
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
@@ -31,7 +30,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

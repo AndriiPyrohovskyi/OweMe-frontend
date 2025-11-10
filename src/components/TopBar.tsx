@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import colors from "../theme/colors";
 import typography from "../theme/typography";
@@ -7,12 +7,14 @@ import Icon from "./Icon";
 
 interface TopBarProps {
     userName?: string;
+    avatarUrl?: string;
     onAvatarPress?: () => void;
     onNotificationPress?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
     userName,
+    avatarUrl,
     onAvatarPress,
     onNotificationPress
 }) => {
@@ -25,7 +27,14 @@ export const TopBar: React.FC<TopBarProps> = ({
                     style={styles.avatar}
                     onPress={onAvatarPress}
                 >
-                    <Text style={styles.avatarText}>{userName?.[0]?.toUpperCase() || '?'}</Text>
+                    {avatarUrl ? (
+                        <Image 
+                            source={{ uri: avatarUrl }} 
+                            style={styles.avatar}
+                        />
+                    ) : (
+                        <Text style={styles.avatarText}>{userName?.[0]?.toUpperCase() || '?'}</Text>
+                    )}
                 </TouchableOpacity>
                 <Text style={styles.appName}>OweMe</Text>
             </View>

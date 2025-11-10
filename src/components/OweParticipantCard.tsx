@@ -38,7 +38,7 @@ export const OweParticipantCard: React.FC<OweParticipantCardProps> = ({
 
   const getRecipientName = () => {
     if (participant.toUser) {
-      return `${participant.toUser.firstName} ${participant.toUser.lastName}`;
+      return participant.toUser.firstName;
     }
     if (participant.group) {
       return participant.group.name;

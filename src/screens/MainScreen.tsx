@@ -30,6 +30,7 @@ import EditGroupScreen from './EditGroupScreen';
 import MyOwesScreen from './MyOwesScreen';
 import CreateOweScreen from './CreateOweScreen';
 import OweDetailsScreen from './OweDetailsScreen';
+import EditOweScreen from './EditOweScreen';
 import MyOweReturnsScreen from './MyOweReturnsScreen';
 import CreateOweReturnScreen from './CreateOweReturnScreen';
 import GroupOwesScreen from './GroupOwesScreen';
@@ -39,6 +40,8 @@ import { TransferScreen } from './TransferScreen';
 import { NotificationsScreen } from './NotificationsScreen';
 import StatisticsScreen from './StatisticsScreen';
 import AchievementsScreen from './AchievementsScreen';
+import { GroupDebtStatusScreen } from './GroupDebtStatusScreen';
+import BannedScreen from './BannedScreen';
 
 type MainScreenProps = {
   navigation: NavigationProp<any>;
@@ -56,12 +59,14 @@ type GroupSubScreen =
   | { type: 'addFriend'; groupId: number }
   | { type: 'members'; groupId: number }
   | { type: 'edit'; groupId: number }
-  | { type: 'owes'; groupId: number };
+  | { type: 'owes'; groupId: number }
+  | { type: 'debtStatus'; groupId: number };
 
 type OwesSubScreen =
   | { type: 'list' }
   | { type: 'create'; friendId?: number; groupId?: number }
   | { type: 'details'; oweId: number }
+  | { type: 'edit'; oweItemId: number }
   | { type: 'returns' }
   | { type: 'createReturn'; participantId: number }
   | { type: 'groupOwes'; groupId: number };
@@ -86,6 +91,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  
+  if (user?.isBanned) {
+    return <BannedScreen />;
+  }
   
   const handleLogout = async () => {
     await logout();
@@ -262,6 +271,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
               onNavigateToAddMember={() => setGroupsSubScreen({ type: 'addMember', groupId: groupsSubScreen.groupId })}
               onNavigateToDetails={() => setGroupsSubScreen({ type: 'details', groupId: groupsSubScreen.groupId })}
               onNavigateToOwes={() => setGroupsSubScreen({ type: 'owes', groupId: groupsSubScreen.groupId })}
+              onNavigateToDebtStatus={() => setGroupsSubScreen({ type: 'debtStatus', groupId: groupsSubScreen.groupId })}
             />
           );
         } else if (groupsSubScreen.type === 'details') {
@@ -325,6 +335,13 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
               }}
             />
           );
+        } else if (groupsSubScreen.type === 'debtStatus' && 'groupId' in groupsSubScreen) {
+          return (
+            <GroupDebtStatusScreen
+              groupId={groupsSubScreen.groupId}
+              onBack={() => setGroupsSubScreen({ type: 'dashboard', groupId: groupsSubScreen.groupId })}
+            />
+          );
         }
         return (
           <GroupsScreen
@@ -355,9 +372,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
             <OweDetailsScreen
               oweId={owesSubScreen.oweId}
               onBack={() => setOwesSubScreen({ type: 'list' })}
-              onEdit={() => {
-                // TODO: implement edit screen
-                Alert.alert('В розробці', 'Редагування боргу ще не реалізовано');
+              onEdit={(oweItemId) => {
+                if (oweItemId) {
+                  setOwesSubScreen({ type: 'edit', oweItemId });
+                } else {
+                  Alert.alert('Помилка', 'Не вдалося відкрити екран редагування');
+                }
               }}
               onCreateReturn={(participantId) => 
                 setOwesSubScreen({ type: 'createReturn', participantId })
@@ -370,6 +390,16 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
                 // Перейти до деталей групи
                 setActiveTab('Групи');
                 setGroupsSubScreen({ type: 'dashboard', groupId });
+              }}
+            />
+          );
+        } else if (owesSubScreen.type === 'edit' && 'oweItemId' in owesSubScreen) {
+          return (
+            <EditOweScreen
+              oweItemId={owesSubScreen.oweItemId}
+              onBack={() => setOwesSubScreen({ type: 'list' })}
+              onSaved={() => {
+                setOwesSubScreen({ type: 'list' });
               }}
             />
           );
@@ -475,8 +505,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({ navigation }) => {
         <View style={styles.contentContainer}>
           {renderContent()}
         </View>
-  {/* Hide TabBar when in GroupDashboard, viewing profile, wallet, or when showing Profile */}
-  {!showProfile && groupsSubScreen.type !== 'dashboard' && !viewingUserProfile && !walletSubScreen && (
+  {/* Hide TabBar when in GroupDashboard, viewing profile, wallet, notifications, statistics, or when showing Profile */}
+  {!showProfile && !showNotifications && !showStatistics && groupsSubScreen.type !== 'dashboard' && !viewingUserProfile && !walletSubScreen && (
           <TabBar
             onTabChange={(tab) => {
               setActiveTab(tab.name);

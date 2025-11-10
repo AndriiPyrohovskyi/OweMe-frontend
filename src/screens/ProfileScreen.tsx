@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,13 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { Icon } from '../components/Icon';
 import { Button } from '../components/Button';
+import { uploadApi } from '../services/api/endpoints/upload';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 
@@ -20,15 +23,45 @@ interface ProfileScreenProps {
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onEdit }) => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const [uploading, setUploading] = useState(false);
+
+  const handleImagePick = async (type: 'camera' | 'gallery') => {
+    try {
+      const result = type === 'camera' 
+        ? await launchCamera({ mediaType: 'photo', quality: 0.8 })
+        : await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
+
+      if (result.didCancel || !result.assets?.[0]) {
+        return;
+      }
+
+      const asset = result.assets[0];
+      setUploading(true);
+
+      const uploadResult = await uploadApi.uploadAvatar({
+        uri: asset.uri,
+        type: asset.type,
+        fileName: asset.fileName,
+      });
+
+      await refreshUser();
+      Alert.alert('Успіх', 'Аватарка оновлена!');
+    } catch (error: any) {
+      console.error('Failed to upload avatar:', error);
+      Alert.alert('Помилка', error.response?.data?.message || 'Не вдалося завантажити фото');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleChangeAvatar = () => {
     Alert.alert(
       'Змінити фото',
       'Виберіть джерело',
       [
-        { text: 'Камера', onPress: () => console.log('Open camera') },
-        { text: 'Галерея', onPress: () => console.log('Open gallery') },
+        { text: 'Камера', onPress: () => handleImagePick('camera') },
+        { text: 'Галерея', onPress: () => handleImagePick('gallery') },
         { text: 'Скасувати', style: 'cancel' },
       ]
     );
@@ -53,7 +86,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onEdit }) => {
         {/* Avatar Section */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrapper}>
-            {user?.avatarUrl ? (
+            {uploading ? (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            ) : user?.avatarUrl ? (
               <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
@@ -66,11 +103,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ onBack, onEdit }) => {
           </View>
 
           <Button
-            title="Змінити фото"
+            title={uploading ? "Завантаження..." : "Змінити фото"}
             icon="homeIcon"
             variant="purple"
             padding={12}
             onPress={handleChangeAvatar}
+            disabled={uploading}
             style={styles.changePhotoButton}
           />
         </View>

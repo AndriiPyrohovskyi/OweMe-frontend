@@ -264,7 +264,7 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
                       </View>
                       <View style={styles.userInfo}>
                         <Text style={typography.bodyBold}>
-                          {request.sender.firstName} {request.sender.lastName}
+                          {request.sender.firstName}
                         </Text>
                         <Text style={[typography.caption, styles.userTag]}>
                           @{request.sender.username}
@@ -312,7 +312,7 @@ const GroupRequestsManagementScreen: React.FC<GroupRequestsManagementScreenProps
                       </View>
                       <View style={styles.userInfo}>
                         <Text style={typography.bodyBold}>
-                          {request.receiver.firstName} {request.receiver.lastName}
+                          {request.receiver.firstName}
                         </Text>
                         <Text style={[typography.caption, styles.userTag]}>
                           @{request.receiver.username}

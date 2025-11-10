@@ -19,7 +19,7 @@ import { useDebtReturn } from '../hooks/useDebtReturn';
 interface OweDetailsScreenProps {
   oweId: number;
   onBack: () => void;
-  onEdit: () => void;
+  onEdit: (oweItemId?: number) => void;
   onCreateReturn: (participantId: number) => void;
   onNavigateToUser?: (userId: number) => void;
   onNavigateToGroup?: (groupId: number) => void;
@@ -138,16 +138,11 @@ export const OweDetailsScreen: React.FC<OweDetailsScreenProps> = ({
   };
 
   const renderOweItem = (item: OweItem) => {
+    const hasImages = item.imageUrls && item.imageUrls.length > 0;
+    
     return (
       <View key={item.id} style={styles.itemCard}>
         <View style={styles.itemHeader}>
-          {item.imageUrl ? (
-            <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
-          ) : (
-            <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
-              <Icon name="homeIcon" size={16} />
-            </View>
-          )}
           <View style={styles.itemInfo}>
             <Text style={[typography.h3, styles.itemName]}>{item.name}</Text>
             {item.description && (
@@ -156,7 +151,38 @@ export const OweDetailsScreen: React.FC<OweDetailsScreenProps> = ({
               </Text>
             )}
           </View>
+          {isOwner && (
+            <Button
+              title="Редагувати"
+              onPress={() => onEdit(item.id)}
+              variant="yellow"
+              padding={6}
+              style={styles.editItemButton}
+            />
+          )}
         </View>
+
+        {/* Images Gallery */}
+        {hasImages && (
+          <View style={styles.imagesSection}>
+            <Text style={[typography.caption, styles.imagesSectionTitle]}>
+              Фото ({item.imageUrls!.length}):
+            </Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.imagesScroll}
+            >
+              {item.imageUrls!.map((url: string, index: number) => (
+                <Image 
+                  key={index}
+                  source={{ uri: url }} 
+                  style={styles.itemImage}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <Text style={[typography.main, styles.participantsTitle]}>
           Учасники ({item.oweParticipants.length}):
@@ -379,22 +405,31 @@ const styles = StyleSheet.create({
   },
   itemHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border_divider,
   },
-  itemImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 12,
+  editItemButton: {
+    marginLeft: 8,
   },
-  itemImagePlaceholder: {
-    backgroundColor: colors.primary15,
-    justifyContent: 'center',
-    alignItems: 'center',
+  imagesSection: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  imagesSectionTitle: {
+    color: colors.text70,
+    marginBottom: 8,
+  },
+  imagesScroll: {
+    flexDirection: 'row',
+  },
+  itemImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 8,
+    marginRight: 8,
   },
   itemInfo: {
     flex: 1,

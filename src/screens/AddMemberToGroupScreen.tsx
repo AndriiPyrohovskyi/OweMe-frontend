@@ -6,13 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   Alert,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { friendsApi, UserSearchResult, Friend } from '../services/api/endpoints/friends';
 import { groupsApi } from '../services/api/endpoints/groups';
 import { Icon } from '../components/Icon';
+import { HeaderBar } from '../components/HeaderBar';
 import colors from '../theme/colors';
 import typography from '../theme/typography';
 
@@ -32,12 +35,31 @@ const AddMemberToGroupScreen: React.FC<AddMemberToGroupScreenProps> = ({
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [invitedUsers, setInvitedUsers] = useState<Set<number>>(new Set());
+  const [groupMembers, setGroupMembers] = useState<Set<number>>(new Set());
+  const [pendingInvites, setPendingInvites] = useState<Set<number>>(new Set());
 
   useEffect(() => {
+    loadGroupData();
     if (searchMode === 'friends') {
       loadFriends();
     }
   }, [searchMode]);
+
+    const loadGroupData = async () => {
+    try {
+      const [members, requests] = await Promise.all([
+        groupsApi.getGroupMembers(groupId),
+        groupsApi.getRequestsFromGroup(groupId),
+      ]);
+      setGroupMembers(new Set(members.map((m: any) => m.user.id)));
+      const pendingIds = requests
+        .filter((r: any) => r.requestStatus === 'Opened')
+        .map((r: any) => r.receiver.id);
+      setPendingInvites(new Set(pendingIds));
+    } catch (error) {
+      console.error('Failed to load group data:', error);
+    }
+  };
 
   const loadFriends = async () => {
     try {
@@ -52,6 +74,15 @@ const AddMemberToGroupScreen: React.FC<AddMemberToGroupScreenProps> = ({
       setLoading(false);
     }
   };
+
+  // Фільтр друзів по пошуку
+  const filteredFriends = searchMode === 'friends' && searchQuery
+    ? friends.filter(f => 
+        f.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.username?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : friends;
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -74,26 +105,34 @@ const AddMemberToGroupScreen: React.FC<AddMemberToGroupScreenProps> = ({
   const handleInvite = async (userId: number) => {
     try {
       await groupsApi.sendRequestFromGroup(groupId, userId);
-      setInvitedUsers((prev) => new Set(prev).add(userId));
-      Alert.alert('Успішно', 'Запрошення надіслано');
-    } catch (error: any) {
+      setInvitedUsers(prev => new Set(prev).add(userId));
+      setPendingInvites(prev => new Set(prev).add(userId));
+      Alert.alert('Успіх', 'Запрошення надіслано');
+    } catch (error) {
       console.error('Failed to invite user:', error);
-      Alert.alert('Помилка', error.response?.data?.message || 'Не вдалося надіслати запрошення');
+      Alert.alert('Помилка', 'Не вдалося надіслати запрошення');
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Icon name="arrowLeft" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <View style={styles.headerAvatar}>
-          <Icon name="friendsIcon" size={24} color={colors.text70} />
-        </View>
-        <Text style={[typography.h3, styles.headerTitle]}>Додати учасника</Text>
-      </View>
+  const handleAddMember = async (userId: number) => {
+    // For friends, same as invite
+    await handleInvite(userId);
+  };
+
+  const getUserStatus = (userId: number) => {
+    if (groupMembers.has(userId)) return 'member';
+    if (pendingInvites.has(userId)) return 'invited';
+    if (invitedUsers.has(userId)) return 'invited';
+    return 'none';
+  };
+
+  const getButtonText = (status: string): string => {
+    if (status === 'member') return 'Учасник';
+    if (status === 'invited') return 'Запрошений';
+    return 'Додати';
+  };  return (
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <HeaderBar title="Додати учасника" onBack={onBack} />
 
       {/* Mode Tabs */}
       <View style={styles.tabsContainer}>
@@ -143,38 +182,49 @@ const AddMemberToGroupScreen: React.FC<AddMemberToGroupScreenProps> = ({
             <View style={styles.emptyState}>
               <Text style={typography.body}>Завантаження...</Text>
             </View>
-          ) : friends.length === 0 ? (
+          ) : filteredFriends.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={typography.body}>У вас поки немає друзів</Text>
+              <Text style={typography.body}>
+                {searchQuery ? 'Нічого не знайдено' : 'У вас поки немає друзів'}
+              </Text>
             </View>
           ) : (
-            friends.map((friend) => (
-              <View key={friend.id} style={styles.userCard}>
-                <View style={styles.userInfo}>
-                  <View style={styles.avatar}>
-                    <Icon name="homeIcon" size={32} color={colors.text70} />
+            filteredFriends.map((friend) => {
+              const status = getUserStatus(friend.id);
+              return (
+                <View key={friend.id} style={styles.friendItem}>
+                  <View style={styles.friendInfo}>
+                    <View style={styles.avatarCircle}>
+                      <Text style={styles.avatarText}>
+                        {(friend.firstName?.[0] || friend.username?.[0] || '?').toUpperCase()}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text style={styles.friendName}>
+                        {friend.firstName}
+                      </Text>
+                      <Text style={styles.friendUsername}>@{friend.username}</Text>
+                    </View>
                   </View>
-                  <View style={styles.userDetails}>
-                    <Text style={styles.userName}>
-                      {friend.firstName} {friend.lastName}
+                  <TouchableOpacity
+                    style={[
+                      styles.addButton,
+                      status === 'invited' && styles.invitedButton,
+                      status === 'member' && styles.memberButton,
+                    ]}
+                    onPress={() => status === 'none' ? handleAddMember(friend.id) : null}
+                    disabled={status !== 'none'}
+                  >
+                    <Text style={[
+                      styles.addButtonText,
+                      status !== 'none' && styles.disabledButtonText
+                    ]}>
+                      {getButtonText(status)}
                     </Text>
-                    <Text style={styles.userUsername}>@{friend.username}</Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  style={[
-                    styles.inviteButton,
-                    invitedUsers.has(friend.id) && styles.invitedButton,
-                  ]}
-                  onPress={() => handleInvite(friend.id)}
-                  disabled={invitedUsers.has(friend.id)}
-                >
-                  <Text style={styles.inviteButtonText}>
-                    {invitedUsers.has(friend.id) ? 'Запрошено' : 'Запросити'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))
+              );
+            })
           )
         ) : (
           // Global search results
@@ -197,37 +247,53 @@ const AddMemberToGroupScreen: React.FC<AddMemberToGroupScreenProps> = ({
               </Text>
             </View>
           ) : (
-            searchResults.map((user) => (
-              <View key={user.id} style={styles.userCard}>
-                <View style={styles.userInfo}>
-                  <View style={styles.avatar}>
-                    <Icon name="homeIcon" size={32} color={colors.text70} />
+            searchResults.map((user) => {
+              const status = getUserStatus(user.id);
+              return (
+                <View key={user.id} style={styles.userCard}>
+                  <View style={styles.userInfo}>
+                    {user.avatarUrl ? (
+                      <Image 
+                        source={{ uri: user.avatarUrl }} 
+                        style={styles.avatar}
+                      />
+                    ) : (
+                      <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                        <Text style={styles.avatarText}>
+                          {user.firstName?.[0]?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.userDetails}>
+                      <Text style={styles.userName}>
+                        {user.firstName}
+                      </Text>
+                      <Text style={styles.userUsername}>@{user.username}</Text>
+                    </View>
                   </View>
-                  <View style={styles.userDetails}>
-                    <Text style={styles.userName}>
-                      {user.firstName} {user.lastName}
+                  <TouchableOpacity
+                    style={[
+                      styles.inviteButton,
+                      status === 'invited' && styles.invitedButton,
+                      status === 'member' && styles.memberButton,
+                    ]}
+                    onPress={() => status === 'none' ? handleInvite(user.id) : null}
+                    disabled={status !== 'none'}
+                  >
+                    <Text style={[
+                      styles.inviteButtonText,
+                      status !== 'none' && styles.disabledButtonText
+                    ]}>
+                      {getButtonText(status)}
                     </Text>
-                    <Text style={styles.userUsername}>@{user.username}</Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  style={[
-                    styles.inviteButton,
-                    invitedUsers.has(user.id) && styles.invitedButton,
-                  ]}
-                  onPress={() => handleInvite(user.id)}
-                  disabled={invitedUsers.has(user.id)}
-                >
-                  <Text style={styles.inviteButtonText}>
-                    {invitedUsers.has(user.id) ? 'Запрошено' : 'Запросити'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))
+              );
+            })
           )
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -338,10 +404,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
+    marginRight: 12,
+  },
+  avatarPlaceholder: {
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   userDetails: {
     flex: 1,
@@ -365,7 +433,64 @@ const styles = StyleSheet.create({
   invitedButton: {
     backgroundColor: colors.green,
   },
+  memberButton: {
+    backgroundColor: colors.text70,
+  },
   inviteButtonText: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  disabledButtonText: {
+    color: colors.text70,
+  },
+  friendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card_surface,
+    padding: 12,
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginBottom: 12,
+  },
+  friendInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    ...typography.h3,
+    fontSize: 18,
+    color: colors.background,
+    fontWeight: '600',
+  },
+  friendName: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  friendUsername: {
+    ...typography.caption,
+    color: colors.text70,
+  },
+  addButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+  },
+  addButtonText: {
     ...typography.body,
     fontWeight: '600',
     color: colors.text,
